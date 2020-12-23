@@ -2,11 +2,11 @@ import sys
 from collections import defaultdict
 from typing import List 
 import random
-import math 
+import math
 
-# python 3 BBsort implemetation.
+# Python 3 BBsort implementation.
 
-# Copyright Dec 2020 Konstantin Briukhnov (kooltew at gmail.com) (@CostaBru). San-Francisco Bay Area.
+# Copyright Dec 2020 Konstantin Briukhnov (kooltew at gmail.com) (CostaBru @KBriukhnov). San-Francisco Bay Area.
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -14,14 +14,14 @@ import math
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-def backet_log_sort(arr, O): 
+def bb_sort(arr, O): 
     rez = []
 
-    backet_log_sort_core(arr, rez,  O)
+    bb_sort_core(arr, rez,  O)
 
     return rez
 
-def backet_log_sort_core(arr, output_arr, O): 
+def bb_sort_core(arr, output_arr, O): 
 
     def getLog(x):
 
@@ -99,7 +99,7 @@ def backet_log_sort_core(arr, output_arr, O):
                     fillArr(bucket[0], output_arr, count_map, O)
                     fillArr(bucket[1], output_arr, count_map, O)        
             elif lenBuckets > 1:
-                backet_log_sort_core(bucket, output_arr, O)
+                bb_sort_core(bucket, output_arr, O)
 
 verbose = True
 O = [0]
@@ -175,7 +175,7 @@ for t in tests:
 
     O[0] = 0
 
-    result = list(backet_log_sort(t, O))
+    result = list(bb_sort(t, O))
     t.sort()
 
     good = result == t
