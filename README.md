@@ -12,31 +12,31 @@ Let's consider that rescaling, math log and rounding operations take O(1). Havin
 
 # Algorithm
 
-Count all dupicates and store it in map. Find min and max number in array.
+Count all dupicates and store it in map. Find min and max number in array. O(N)
 
-Calculate parameters to normalize keys to output array size.
+Calculate parameters to normalize keys to output array size. O(1)
 
-For each key in the map
+For each key in the map. O(M) where M number of unique items.
 
-- Use math log to scale map keys much more closely to each other. 
+- Use math log to scale map keys much more closely to each other. O(1)
 
-- Normalize the key using parameters we got earlier.
+- Normalize the key using parameters we got earlier. O(1)
 
-- Round that normalized value to integer and got a bucket index.
+- Round that normalized value to integer and got a bucket index. O(1)
 
-- Add the key to the bucket.
+- Add the key to the bucket. O(1)
 
 Once we got all numbers processed. We will have 4 cases: 
 
 1. Empty bucket. Skip it.
 
-2. Bucket with sigle item. Write key and duplicates to the output list.
+2. Bucket with sigle item. Write key and duplicates to the output list. O(1)
 
-3. Bucket with two items. Compare keys and write it and duplicates in order to the output list.
+3. Bucket with two items. Compare keys and write it and duplicates in order to the output list. O(2)
 
-4. Bucket with more than 3 items or more. Run the whole procedure for that bucket.
+4. Bucket with more than 3 items or more. Run the whole procedure for that bucket. O(C) where C is uqual to 3 in avarage. 
 
-Perform above checks and steps for each bucket. Profit. 
+Perform above checks and steps for each bucket O(N). Profit. 
 
 The algorithm is easy and sweet. It can be ported to low level languages in minutes.
 
