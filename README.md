@@ -22,7 +22,7 @@ For each key in the map
 
 - Normalize the key using parameters we got earlier.
 
-- Round that normalized log value to integer and got a bucket index.
+- Round that normalized value to integer and got a bucket index.
 
 - Add the key to the bucket.
 
