@@ -30,13 +30,13 @@ Once we got all numbers processed. We will have 4 cases:
 
 1. Empty bucket. Skip it.
 
-2. Bucket with sigle item. Write key and duplicates to the output list. O(T), where T number of duplicates. T is equal to 1 in avarage.
+2. Bucket with single item. Write key and duplicates to the output list. O(T), where T number of duplicates. T is equal to 1 in avarage.
 
 3. Bucket with two items. Compare keys and write it and duplicates in order to the output list. O(2 * T), where T number of duplicates. T is equal to 1 in avarage.
 
 4. Bucket with more than 3 items. Run the whole procedure for that bucket. O(C), where C is equal to 3 in avarage. 
 
-Perform above checks and steps for each bucket O(N). Profit. 
+Perform above checks and steps for each bucket. That will take O(N). Profit. 
 
 The algorithm is easy and sweet. It can be ported to low level languages in minutes.
 
