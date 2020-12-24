@@ -20,11 +20,11 @@ For each key in the map
 
 - Use math log to scale map keys much more closely to each other. 
 
-- Perfrom normalization the key using parameters we got earlier.
+- Normalize the key using parameters we got earlier.
 
-- Round that normalized log number to integer and got a bucket index.
+- Round that normalized log value to integer and got a bucket index.
 
-- Store key in the bucket
+- Add the key to the bucket.
 
 Once we got all numbers processed. We will have 4 cases: 
 
