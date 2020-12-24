@@ -34,7 +34,7 @@ Once we got all numbers processed. We will have 4 cases:
 
 3. Bucket with two items. Compare keys and write it and duplicates in order to the output list. O(2 * T), where T number of duplicates. T is equal to 1 in avarage.
 
-4. Bucket with more than 3 items. Run the whole procedure for that bucket. O(C), where C is uqual to 3 in avarage. 
+4. Bucket with more than 3 items. Run the whole procedure for that bucket. O(C), where C is equal to 3 in avarage. 
 
 Perform above checks and steps for each bucket O(N). Profit. 
 
