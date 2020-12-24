@@ -6,7 +6,7 @@ Python3 implementation of stable non comparsion sorting algorithm that works  us
 
 Was developed on the same day when the magnificant Aleksey Navalny's Blue Boxers investigation was published. 
 
-# Main idea
+# The key idea
 
 Let's consider that rescaling, log operation and number rounding operations take O(1). Having that the algorith below needs O(3N) time to sort any number array.
 
