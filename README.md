@@ -13,7 +13,9 @@ The BB sort is very simple and uses O(3N) in average.
 
 # The key idea
 
-Let's consider that rescaling, math log and rounding operations take O(1). Having that the algorithm below needs O(3N) time to sort any number array.
+Let's consider that rescaling, math log and rounding operations take O(1). Having that the algorithm below needs O(3N) time to sort any number array. 
+
+We will take the best from the counting and bucket sorting algorithms, use log scale to compress numbers, and keys normalization from 0 to array length for item bucket assignment.
 
 # Algorithm
 
