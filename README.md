@@ -2,9 +2,14 @@
 
 In honor of Aleksey Navalny's Blue Boxers Case.
 
-Python3 implementation of stable non comparsion sorting algorithm that works  using O(N) time even for non uniformly distributed numbers.
+Python3 implementation of stable non comparsion sorting algorithm that works using O(N) time even for non uniformly distributed numbers.
 
 Was developed on the same day when the magnificant Aleksey Navalny's Blue Boxers investigation was published. 
+
+The BB sort is very simple and uses O(3N) in avarage. 
+
+- Counting sort takes O(4N) and it is not effective on large numbers.
+- Bucket is O(N ** 2) and has poor performance on non uniformly distributed numbers.
 
 # The key idea
 
