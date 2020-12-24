@@ -38,7 +38,7 @@ Once we got all numbers processed. We will have 4 cases:
 
 Perform above checks and steps for each bucket. Profit. 
 
-The algorithm is easy and sweet. It can be ported to low lever languages in minutes.
+The algorithm is easy and sweet. It can be ported to low level languages in minutes.
 
 # Performance
 
