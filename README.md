@@ -54,8 +54,9 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 - iter = [23], n = 5, 3n = 15, 4n = 20, iter - 4n = 3, n*log n = 12, n*log n - iter = -11 , n ** 2 = 25, n**2 - iter = 2
 - iter = [69], n = 15, 3n = 45, 4n = 60, iter - 4n = 9, n*log n = 59, n*log n - iter = -10 , n ** 2 = 225, n**2 - iter = 156
 
-### The worst case for bucket sorting. The input is not uniformly distributed and has a lot of small clusters far from each other.
+### Below case is the worst for bucket sorting. The input is not uniformly distributed and has a lot of small clusters far from each other.
 - iter = [906], n = 300, 3n = 900, 4n = 1200, iter - 4n = -294, n*log n = 2469, n*log n - iter = 1563 , n ** 2 = 90000, n**2 - iter = 89094
+
 
 - iter = [1238], n = 300, 3n = 900, 4n = 1200, iter - 4n = 38, n*log n = 2469, n*log n - iter = 1231 , n ** 2 = 90000, n**2 - iter = 88762
 - iter = [13178], n = 3000, 3n = 9000, 4n = 12000, iter - 4n = 1178, n*log n = 34652, n*log n - iter = 21474 , n ** 2 = 9000000, n**2 - iter = 8986822
@@ -71,6 +72,16 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 - iter = [49210], n = 10000, 3n = 30000, 4n = 40000, iter - 4n = 9210, n*log n = 132877, n*log n - iter = 83667 , n ** 2 = 100000000, n**2 - iter = 99950790
 - iter = [491212], n = 100000, 3n = 300000, 4n = 400000, iter - 4n = 91212, n*log n = 1660964, n*log n - iter = 1169752 , n ** 2 = 10000000000, n**2 - iter = 9999508788
 - iter = [4686420], n = 1000000, 3n = 3000000, 4n = 4000000, iter - 4n = 686420, n*log n = 19931569, n*log n - iter = 15245149 , n ** 2 = 1000000000000, n**2 - iter = 999995313580
+
+# Advantages
+
+BB sort can be used in lazy way. The output may be considered as a stream, iterator, or pipeline for next operation.
+
+Task like "take M sorted items from M given unsorted set" is good for BB sorting. In that case first sorted item will be available in O(2N).
+
+# Disadvanteges
+
+Because it has to do extra work before sorting, it works worse that comparsion N logN sorting algorithms in case of small size arrays with item count less than 30.
 
 # References
 
