@@ -75,3 +75,4 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 - https://en.wikipedia.org/wiki/Feature_scaling
 - https://en.wikipedia.org/wiki/List_of_logarithmic_identities
 - https://en.wikipedia.org/wiki/Bucket_sort
+- https://en.wikipedia.org/wiki/Counting_sort
