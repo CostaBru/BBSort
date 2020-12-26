@@ -4,7 +4,7 @@ from typing import List
 import random
 import math
 
-# Python 3 BBsort implementation.
+# Python 3 BB sort implementation.
 
 # Copyright Dec 2020 Konstantin Briukhnov (kooltew at gmail.com) (CostaBru @KBriukhnov). San-Francisco Bay Area.
 
@@ -14,14 +14,15 @@ import math
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-def bb_sort(arr, O): 
-    rez = []
+def bb_sort(array, O): 
+    i = 0
+    for item in bb_sort_core_to_iter(array, len(array),  O):
+        array[i] = item
 
-    bb_sort_core(arr, rez,  O)
+def bb_sort_to_stream(array, stream, O): 
+    bb_sort_core_to_stream(array, len(array), stream, O)
 
-    return rez
-
-def bb_sort_core(arr, output_arr, O): 
+def getBucketes(enumerable, count, count_map, O):
 
     def getLog(x):
 
@@ -30,7 +31,7 @@ def bb_sort_core(arr, output_arr, O):
 
         if x == 1:
             return x
-        
+
         if x == -1:
             return x
 
@@ -40,7 +41,7 @@ def bb_sort_core(arr, output_arr, O):
         return math.log2(x)
 
     def GetLinearTransformParams(x1, x2, y1, y2):
-        
+
         dx = x1 - x2
 
         if dx == 0:
@@ -49,20 +50,12 @@ def bb_sort_core(arr, output_arr, O):
         a = (y1 - y2) / (dx)
         b = y1 - (a * x1)
         return a, b
-    
-    def fillArr(val, output_arr, count_map, O):
-        valCount = count_map[val]
 
-        O[0] += valCount
-
-        for j in range(valCount):
-            output_arr.append(val)
-
-    count_map, min_element, max_element, size = defaultdict(int), sys.maxsize, -sys.maxsize, len(arr)
+    min_element, max_element, size = sys.maxsize, -sys.maxsize, count
 
     buckets = [None] * (size + 1)
 
-    for item in arr:
+    for item in enumerable:
         count_map[item] += 1
         min_element = min(min_element, item)
         max_element = max(max_element, item)
@@ -84,23 +77,67 @@ def bb_sort_core(arr, output_arr, O):
 
     O[0] += len(count_map)
 
+    return buckets
+
+def bb_sort_core_to_stream(enumerable, count, output, O): 
+
+    def fillStream(val, output, count_map, O):
+        valCount = count_map[val]
+
+        O[0] += valCount
+
+        for j in range(valCount):
+            output.append(val)
+
+    count_map = defaultdict(int)
+
+    buckets = getBucketes(enumerable, count, count_map, O)
+
     for bucket in buckets:
-
         if bucket:
-            lenBuckets = len(bucket)
+            bucketCount = len(bucket)
+            if bucketCount == 1:
+                fillStream(bucket[0], output, count_map, O)        
+            elif bucketCount == 2:
+                b1, b2 = bucket[0], bucket[1]
+                if b1 > b2:
+                    b1, b2 = b2, b1
+                fillStream(b1, output, count_map, O)
+                fillStream(b2, output, count_map, O)        
+            elif bucketCount > 1:
+                bb_sort_core_to_stream(bucket, bucketCount, output, O)
 
-            if lenBuckets == 1:
-                fillArr(bucket[0], output_arr, count_map, O)        
-            elif lenBuckets == 2:
-                if bucket[0] > bucket[1]:
-                    fillArr(bucket[1], output_arr, count_map, O)
-                    fillArr(bucket[0], output_arr, count_map, O)
-                else:
-                    fillArr(bucket[0], output_arr, count_map, O)
-                    fillArr(bucket[1], output_arr, count_map, O)        
-            elif lenBuckets > 1:
-                bb_sort_core(bucket, output_arr, O)
+def bb_sort_core_to_iter(enumerable, count, O): 
 
+    def iterArr(val, count_map, O):
+        valCount = count_map[val]
+
+        O[0] += valCount
+
+        for j in range(valCount):
+            yield val
+
+    count_map = defaultdict(int)
+
+    buckets = getBucketes(enumerable, count, count_map, O)
+
+    for bucket in buckets:
+        if bucket:
+            bucketCount = len(bucket)
+            if bucketCount == 1:
+                for item in iterArr(bucket[0], count_map, O):
+                    yield item      
+            elif bucketCount == 2:            
+                b1, b2 = bucket[0], bucket[1]
+                if b1 > b2:
+                    b1, b2 = b2, b1               
+                for item in iterArr(b1, count_map, O):
+                    yield item 
+                for item in iterArr(b2, count_map, O):
+                    yield item     
+            elif bucketCount > 1:
+                for item in bb_sort_core_to_iter(bucket, bucketCount, O):
+                    yield item  
 verbose = True
 O = [0]
 tests = []
@@ -114,17 +151,17 @@ arr = [0.0001, 0.0002, 0.0003, 1,2,3, 10,20,30, 100,200,300, 1000,2000,3000]
 arr.reverse()
 tests.append(arr)
 
-arr = []
+bucket_worse_arr = []
 arrt = [0.000000000001,0.000000000002,0.000000000003]
 cluster = 10.0
 
 for i in range(100):
     for a in arrt:
-        arr.append(a * cluster)
+        bucket_worse_arr.append(a * cluster)
     cluster *= 10.0
-arr.reverse()
+bucket_worse_arr.reverse()
 
-tests.append(arr)
+tests.append(bucket_worse_arr)
 
 arr = list(range(300))
 arr.reverse()
@@ -167,25 +204,44 @@ for i in range(10):
     arr = random.sample(range(-1000000, 1000000), 1000000)
     tests.append(arr)
 
+inplace = list(bucket_worse_arr)
+inplace.sort()
+
+bb_inplace = list(bucket_worse_arr)
+bb_sort(bb_inplace, O)
+
+assert bb_inplace == bucket_worse_arr
 
 caseNumber = 1
 allGood = True
 
-for t in tests:
+if verbose:
+    print("| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |") 
+    print("|------|------|------|-----|------|------|-------|------------------|--------------|") 
+
+for test in tests:
 
     O[0] = 0
 
-    result = list(bb_sort(t, O))
-    t.sort()
+    result = []
 
-    good = result == t
+    bb_sort_to_stream(test, result, O)
+
+    assert test != result
+
+    test.sort()
+
+    good = result == test
 
     if good is False:
         allGood = False
 
     if verbose:
-        print("case:  " + str(caseNumber) + " good: " + str(good) + " iter = " + str(O) + " n = " + str(len(t)) + " 3n = "  + str(len(t) * 3) + " 4n = "  + str(len(t) * 4) + " , n*log n = " + str(len(t) * math.log2(len(t))) + " , n ** 2 = " + str(len(t) ** 2)) 
+        testLen = len(test)
+        nlogN = testLen * math.log2(len(test))
+        print("| " + str(caseNumber) + " | " + str(good) + " | " + str(O) + " | " + str(testLen) + " | "  + str(testLen * 3) + " | "  + str(testLen * 4) + " | " + str(round(nlogN)) + " | " + str(testLen ** 2) + " | " + str(round(nlogN - O[0])) + " |") 
 
     caseNumber += 1
 
-assert result == t    
+if verbose:
+    print("|------|------|------|-----|------|------|-------|------------------|--------------|") 
