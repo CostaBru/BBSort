@@ -84,7 +84,7 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 
 BB sort can be used in lazy way. The output may be considered as a stream, iterator, or pipeline for next operation.
 
-Task like "take M sorted items from M given unsorted set" is good for BB sorting. In that case first sorted item will be available in O(2N).
+Task like "take M sorted items from N given unsorted items" is good for BB sorting. In that case first sorted item will be available in O(2N).
 
 Hence we have copy of array in buckets and count map we can use source array as output as well.
 
