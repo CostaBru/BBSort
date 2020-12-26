@@ -49,35 +49,44 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 
 # Performance
 
-- iter = [24], n = 8, 3n = 24, 4n = 32, iter - 4n = -8, n*log n = 24, n*log n - iter = 0 , n ** 2 = 64, n**2 - iter = 40
-- iter = [23], n = 5, 3n = 15, 4n = 20, iter - 4n = 3, n*log n = 12, n*log n - iter = -11 , n ** 2 = 25, n**2 - iter = 2
-- iter = [23], n = 5, 3n = 15, 4n = 20, iter - 4n = 3, n*log n = 12, n*log n - iter = -11 , n ** 2 = 25, n**2 - iter = 2
-- iter = [69], n = 15, 3n = 45, 4n = 60, iter - 4n = 9, n*log n = 59, n*log n - iter = -10 , n ** 2 = 225, n**2 - iter = 156
+| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |
+|------|------|------|-----|------|------|-------|------------------|--------------|
+| 1 | True | [24] | 8 | 24 | 32 | 24 | 64 | 0 |
+| 2 | True | [23] | 5 | 15 | 20 | 12 | 25 | -11 |
+| 3 | True | [23] | 5 | 15 | 20 | 12 | 25 | -11 |
+| 4 | True | [69] | 15 | 45 | 60 | 59 | 225 | -10 |
 
 ### Below case is the worst for bucket sorting. The input is not uniformly distributed and has a lot of small clusters far from each other.
-- iter = [906], n = 300, 3n = 900, 4n = 1200, iter - 4n = -294, n*log n = 2469, n*log n - iter = 1563 , n ** 2 = 90000, n**2 - iter = 89094
 
+| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |
+|------|------|------|-----|------|------|-------|------------------|--------------|
+| 5 | True | [906] | 300 | 900 | 1200 | 2469 | 90000 | 1563 |
 
-- iter = [1238], n = 300, 3n = 900, 4n = 1200, iter - 4n = 38, n*log n = 2469, n*log n - iter = 1231 , n ** 2 = 90000, n**2 - iter = 88762
-- iter = [13178], n = 3000, 3n = 9000, 4n = 12000, iter - 4n = 1178, n*log n = 34652, n*log n - iter = 21474 , n ** 2 = 9000000, n**2 - iter = 8986822
-- iter = [135836], n = 30000, 3n = 90000, 4n = 120000, iter - 4n = 15836, n*log n = 446180, n*log n - iter = 310344 , n ** 2 = 900000000, n**2 - iter = 899864164
-- iter = [1384258], n = 300000, 3n = 900000, 4n = 1200000, iter - 4n = 184258, n*log n = 5458381, n*log n - iter = 4074123 , n ** 2 = 90000000000, n**2 - iter = 89998615742
-
-- iter = [14021278], n = 3000000, 3n = 9000000, 4n = 12000000, iter - 4n = 2021278, n*log n = 64549593, n*log n - iter = 50528315 , n ** 2 = 9000000000000, n**2 - iter = 8999985978722
+| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |
+|------|------|------|-----|------|------|-------|------------------|--------------|
+| 6 | True | [1238] | 300 | 900 | 1200 | 2469 | 90000 | 1231 |
+| 7 | True | [13178] | 3000 | 9000 | 12000 | 34652 | 9000000 | 21474 |
+| 8 | True | [135836] | 30000 | 90000 | 120000 | 446180 | 900000000 | 310344 |
+| 9 | True | [1384258] | 300000 | 900000 | 1200000 | 5458381 | 90000000000 | 4074123 |
+| 10 | True | [14021278] | 3000000 | 9000000 | 12000000 | 64549593 | 9000000000000 | 50528315 |
 
 ### Random array sorting tests 
-- iter = [46], n = 10, 3n = 30, 4n = 40, iter - 4n = 6, n*log n = 33, n*log n - iter = -13 , n ** 2 = 100, n**2 - iter = 54
-- iter = [492], n = 100, 3n = 300, 4n = 400, iter - 4n = 92, n*log n = 664, n*log n - iter = 172 , n ** 2 = 10000, n**2 - iter = 9508
-- iter = [4868], n = 1000, 3n = 3000, 4n = 4000, iter - 4n = 868, n*log n = 9966, n*log n - iter = 5098 , n ** 2 = 1000000, n**2 - iter = 995132
-- iter = [49210], n = 10000, 3n = 30000, 4n = 40000, iter - 4n = 9210, n*log n = 132877, n*log n - iter = 83667 , n ** 2 = 100000000, n**2 - iter = 99950790
-- iter = [491212], n = 100000, 3n = 300000, 4n = 400000, iter - 4n = 91212, n*log n = 1660964, n*log n - iter = 1169752 , n ** 2 = 10000000000, n**2 - iter = 9999508788
-- iter = [4686420], n = 1000000, 3n = 3000000, 4n = 4000000, iter - 4n = 686420, n*log n = 19931569, n*log n - iter = 15245149 , n ** 2 = 1000000000000, n**2 - iter = 999995313580
+| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |
+|------|------|------|-----|------|------|-------|------------------|--------------|
+| 11 | True | [46] | 10 | 30 | 40 | 33 | 100 | -13 |
+| 12 | True | [492] | 100 | 300 | 400 | 664 | 10000 | 172 |
+| 13 | True | [4868] | 1000 | 3000 | 4000 | 9966 | 1000000 | 5098 |
+| 14 | True | [49210] | 10000 | 30000 | 40000 | 132877 | 100000000 | 83667 |
+| 15 | True | [491212] | 100000 | 300000 | 400000 | 1660964 | 10000000000 | 1169752 |
+| 16 | True | [4686420] | 1000000 | 3000000 | 4000000 | 19931569 | 1000000000000 | 15245149 |
 
 # Advantages
 
 BB sort can be used in lazy way. The output may be considered as a stream, iterator, or pipeline for next operation.
 
 Task like "take M sorted items from M given unsorted set" is good for BB sorting. In that case first sorted item will be available in O(2N).
+
+Hence we have copy of array in buckets and count map we can use source array as output as well.
 
 # Disadvanteges
 
