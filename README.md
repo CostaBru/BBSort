@@ -90,7 +90,7 @@ Hence we have copy of array in buckets and count map we can use source array as 
 
 # Disadvanteges
 
-Because it has to do extra work before sorting, it works worse that comparsion N logN sorting algorithms in case of small size arrays with item count less than 30.
+Because it has to do extra work before sorting, it performs worse that comparsion N logN sorting algorithms in case of small size arrays with item count less than 30.
 
 # References
 
