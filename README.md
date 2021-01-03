@@ -49,7 +49,7 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 
 # Performance
 
-| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |
+| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
 |------|------|------|-----|------|------|-------|------------------|--------------|
 | 1 | True | [24] | 8 | 24 | 32 | 24 | 64 | 0 |
 | 2 | True | [23] | 5 | 15 | 20 | 12 | 25 | -11 |
@@ -58,11 +58,11 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 
 ### Below case is the worst for bucket sorting. The input is not uniformly distributed and has a lot of small clusters far from each other.
 
-| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |
+| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
 |------|------|------|-----|------|------|-------|------------------|--------------|
 | 5 | True | [906] | 300 | 900 | 1200 | 2469 | 90000 | 1563 |
 
-| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |
+| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
 |------|------|------|-----|------|------|-------|------------------|--------------|
 | 6 | True | [1238] | 300 | 900 | 1200 | 2469 | 90000 | 1231 |
 | 7 | True | [13178] | 3000 | 9000 | 12000 | 34652 | 9000000 | 21474 |
@@ -71,7 +71,7 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 | 10 | True | [14021278] | 3000000 | 9000000 | 12000000 | 64549593 | 9000000000000 | 50528315 |
 
 ### Random array sorting tests 
-| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |
+| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
 |------|------|------|-----|------|------|-------|------------------|--------------|
 | 11 | True | [46] | 10 | 30 | 40 | 33 | 100 | -13 |
 | 12 | True | [492] | 100 | 300 | 400 | 664 | 10000 | 172 |
