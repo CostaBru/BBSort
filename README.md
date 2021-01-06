@@ -1,49 +1,49 @@
 # BB sort (Blue Boxers sort)
 
-In honor of Aleksey Navalny's Blue Boxers Case.
+In honor of Aleksey Navalny's ``Blue Boxers`` Case.
 
-Python3 implementation of stable non comparsion sorting algorithm that works using O(N) time even for non uniformly distributed numbers.
+Python3 implementation of stable non comparsion sorting algorithm that works using ``O(N)`` time even for non uniformly distributed numbers.
 
 Was developed on the same day when the magnificant Aleksey Navalny's Blue Boxers investigation was published. 
 
-The BB sort is very simple and uses O(4N) in average. 
+The ``BB sort`` is very simple and uses ``O(4N)`` in average. 
 
-- Counting sort takes O(4N) and it is not effective on large numbers.
-- Bucket is O(N ** 2) and has poor performance on non uniformly distributed numbers.
+- Counting sort takes ``O(4N)`` and it is ``not effective`` on large numbers.
+- Bucket is ``O(N ** 2)`` and has ``poor performance`` on non uniformly distributed numbers.
 
 # The key idea
 
-Let's consider that rescaling, math log and rounding operations take O(1). Having that the algorithm below needs O(4N) time to sort any number array. 
+Let's consider that ``rescaling``, math ``log`` and ``rounding`` operations take ``O(1)``. Having that the algorithm below needs ``O(4N)`` time to sort any number array. 
 
 We will take the best from the counting and bucket sorting algorithms, use log scale to compress numbers, and keys normalization from 0 to array length for item bucket assignment.
 
 # Algorithm
 
-Count all dupicates and store it in map. Find min and max number in array. O(N)
+Count all dupicates and store it in map. Find min and max number in array. ``O(N)``
 
-Calculate parameters to normalize keys to output array size. O(1)
+Calculate parameters to normalize keys to output array size. ``O(1)``
 
-For each key in the map. O(M) where M number of unique items.
+For each key in the map. ``O(M)`` where ``M`` number of unique items.
 
-- Use math log to scale map keys much more closely to each other. O(1)
+- Use math log to scale map keys much more closely to each other. ``O(1)``
 
-- Normalize the key using parameters we got earlier. O(1)
+- Normalize the key using parameters we got earlier. ``O(1)``
 
-- Round that normalized value to integer and got a bucket index. O(1)
+- Round that normalized value to integer and got a bucket index. ``O(1)``
 
-- Add the key to the bucket. O(1)
+- Add the key to the bucket. ``O(1)``
 
 Once we got all numbers processed. We will have 4 cases: 
 
 1. Empty bucket. Skip it.
 
-2. Bucket with single item. Write key and duplicates to the output list. O(T), where T number of duplicates. T is equal to 1 in average.
+2. Bucket with single item. Write key and duplicates to the output list. ``O(T)``, where ``T`` number of duplicates. ``T ``is equal to 1 in average.
 
-3. Bucket with two items. Compare keys and write it and duplicates in order to the output list. O(2 * T), where T number of duplicates. T is equal to 1 in average.
+3. Bucket with two items. Compare keys and write it and duplicates in order to the output list. ``O(2 * T)``, where ``T`` number of duplicates. ``T`` is equal to 1 in average.
 
-4. Bucket with more than 3 items. Run the whole procedure for that bucket. O(C), where C is equal to 3 in average. 
+4. Bucket with more than 3 items. Run the whole procedure for that bucket. ``O(C)``, where ``C`` is equal to 3 in average. 
 
-Perform above checks and steps for each bucket. That will take O(N). Profit. 
+Perform above checks and steps for each bucket. That will take ``O(N)``. Profit. 
 
 The algorithm is easy and sweet. It can be ported to low level languages in minutes.
 
@@ -82,15 +82,15 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 
 # Advantages
 
-BB sort can be used in lazy way. The output may be considered as a stream, iterator, or pipeline for next operation.
+``BB sort`` can be used in lazy way. The output may be considered as a stream, iterator, or pipeline for next operation.
 
-Task like "take M sorted items from N given unsorted items" is good for BB sorting. In that case first sorted item will be available in O(2N).
+Task like ``take M sorted items from N given unsorted items`` is good for ``BB sorting``. In that case first sorted item will be available in just ``O(2N)``.
 
 Hence we have copy of array in buckets and count map we can use source array as output as well.
 
 # Disadvanteges
 
-Because it has to do extra work before sorting, it performs worse than comparsion N logN sorting algorithms in case of small size arrays with item count less than 30.
+Because it has to do extra work before sorting, it performs worse than comparsion ``N logN`` sorting algorithms in case of small size arrays with item count less than ``30``.
 
 # References
 
