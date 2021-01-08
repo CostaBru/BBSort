@@ -104,7 +104,7 @@ def bb_sort_core_to_stream(enumerable, count, output, O):
                     b1, b2 = b2, b1
                 fillStream(b1, output, count_map, O)
                 fillStream(b2, output, count_map, O)        
-            elif bucketCount > 1:
+            else:
                 bb_sort_core_to_stream(bucket, bucketCount, output, O)
 
 def bb_sort_core_to_iter(enumerable, count, O): 
@@ -135,7 +135,7 @@ def bb_sort_core_to_iter(enumerable, count, O):
                     yield item 
                 for item in iterArr(b2, count_map, O):
                     yield item     
-            elif bucketCount > 1:
+            else:
                 for item in bb_sort_core_to_iter(bucket, bucketCount, O):
                     yield item  
 verbose = True
