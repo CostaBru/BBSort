@@ -49,36 +49,33 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 
 # Performance
 
-| case | good | iter |  items(N)  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
-|------|------|------|-----|------|------|-------|------------------|--------------|
-| 1 | True | [24] | 8 | 24 | 32 | 24 | 64 | 0 |
-| 2 | True | [23] | 5 | 15 | 20 | 12 | 25 | -11 |
-| 3 | True | [23] | 5 | 15 | 20 | 12 | 25 | -11 |
-| 4 | True | [69] | 15 | 45 | 60 | 59 | 225 | -10 |
-
 ### Below case is the worst for bucket sorting. The input is not uniformly distributed and has a lot of small clusters far from each other.
 
-| case | good | iter |  items(N)  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
-|------|------|------|-----|------|------|-------|------------------|--------------|
-| 5 | True | [906] | 300 | 900 | 1200 | 2469 | 90000 | 1563 |
+| case  | iter |  items(N)  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
+|-------|------|------------|------|------|-------|------------------|--------------|
+| 5 | [906] | 300 | 900 | 1200 | 2469 | 90000 | 1563 |
 
-| case | good | iter |  items(N)  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
-|------|------|------|-----|------|------|-------|------------------|--------------|
-| 6 | True | [1238] | 300 | 900 | 1200 | 2469 | 90000 | 1231 |
-| 7 | True | [13178] | 3000 | 9000 | 12000 | 34652 | 9000000 | 21474 |
-| 8 | True | [135836] | 30000 | 90000 | 120000 | 446180 | 900000000 | 310344 |
-| 9 | True | [1384258] | 300000 | 900000 | 1200000 | 5458381 | 90000000000 | 4074123 |
-| 10 | True | [14021278] | 3000000 | 9000000 | 12000000 | 64549593 | 9000000000000 | 50528315 |
+### BB and quick sort comparison
 
-### Random array sorting tests 
-| case | good | iter |  items(N)  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
-|------|------|------|-----|------|------|-------|------------------|--------------|
-| 11 | True | [46] | 10 | 30 | 40 | 33 | 100 | -13 |
-| 12 | True | [492] | 100 | 300 | 400 | 664 | 10000 | 172 |
-| 13 | True | [4868] | 1000 | 3000 | 4000 | 9966 | 1000000 | 5098 |
-| 14 | True | [49210] | 10000 | 30000 | 40000 | 132877 | 100000000 | 83667 |
-| 15 | True | [491212] | 100000 | 300000 | 400000 | 1660964 | 10000000000 | 1169752 |
-| 16 | True | [4686420] | 1000000 | 3000000 | 4000000 | 19931569 | 1000000000000 | 15245149 |
+The quick sort python implementation was taken from http://rosettacode.org/wiki/Compare_sorting_algorithms%27_performance
+
+| case |   iter   |   q iter   |        N    |  NLOGN      |  BB time    |   Q time   |   iter - NLOGN    | Q time - BB time  |
+|------|----------|------------|-------------|-------------|-------------|------------|-------------------|-------------------|
+| 1 |  24  |    37  |  8   |   24.0    |  0.0   |   0.0  |   0  | 0.0 |
+| 2 |  23  |    17  |  5   |   11.6096    |  0.0001   |   0.0  |   -11  | -0.0001 |
+| 3 |  23  |    18  |  5   |   11.6096    |  0.0   |   0.0  |   -11  | -0.0 |
+| 4 |  51  |    78  |  15   |   58.6034    |  0.0001   |   0.0001  |   8  | -0.0 |
+| 5 |  1168  |    3220  |  300   |   2468.6456    |  0.0009   |   0.0008  |   1301  | -0.0001 |
+| 6 |  13178  |    46330  |  3000   |   34652.2404    |  1.0045   |   0.0133  |   21474  | -0.9911 |
+| 7 |  46  |    39  |  10   |   33.2193    |  0.0001   |   0.0  |   -13  | -0.0 |
+| 8 |  4896  |    12184  |  1000   |   9965.7843    |  0.0039   |   0.0055  |   5070  | 0.0015 |
+| 9 |  47348048  |    321673850  |  10000000   |   232534966.6421    |  67.2672   |   105.4689  |   185186919  | 38.2017 |
+| 10 | 46  |    54  |  10   |   33.2193    |  0.0001   |   0.122  |   -13  | 0.1219 |
+| 11 | 4954  |    12561  |  1000   |   9965.7843    |  0.0051   |   0.0042  |   5012  | -0.001 |
+| 12 | 47350508  |    305759432  |  10000000   |   232534966.6421    |  77.2285   |   104.457  |   185184459  | 27.2285 |
+
+
+The cases 9 and 12 where ``N=10 000 000`` show that ``BB sort`` performs much better than ``quick sort`` on huge lists.
 
 # Advantages
 
@@ -94,7 +91,9 @@ Because it has to do extra work before sorting, it performs worse than comparsio
 
 # References
 
+- https://www.youtube.com/watch?v=ibqiet6Bg38
 - https://en.wikipedia.org/wiki/Feature_scaling
 - https://en.wikipedia.org/wiki/List_of_logarithmic_identities
 - https://en.wikipedia.org/wiki/Bucket_sort
 - https://en.wikipedia.org/wiki/Counting_sort
+- http://rosettacode.org/wiki/Compare_sorting_algorithms%27_performance
