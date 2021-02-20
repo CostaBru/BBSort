@@ -1,18 +1,26 @@
-import sys
+'''
+Python 3 BB sort implementation.
+
+Copyright Feb 2021 Konstantin Briukhnov (kooltew at gmail.com) (CostaBru @KBriukhnov). San-Francisco Bay Area.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
+ to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+'''
+
 from collections import defaultdict
 from typing import List 
 import random
+import time
 import math
+import sys
 
-# Python 3 BB sort implementation.
-
-# Copyright Dec 2020 Konstantin Briukhnov (kooltew at gmail.com) (CostaBru @KBriukhnov). San-Francisco Bay Area.
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 def bb_sort(array, O): 
     i = 0
@@ -26,13 +34,7 @@ def getBucketes(enumerable, count, count_map, O):
 
     def getLog(x):
 
-        if x == 0:
-            return 0
-
-        if x == 1:
-            return x
-
-        if x == -1:
+        if abs(x) <= 1:
             return x
 
         if x < 0:
@@ -138,110 +140,127 @@ def bb_sort_core_to_iter(enumerable, count, O):
             else:
                 for item in bb_sort_core_to_iter(bucket, bucketCount, O):
                     yield item  
-verbose = True
-O = [0]
-tests = []
-arr = [-5, -10, 0, -3, 8, 5, -1, 10] 
-tests.append(arr)
-arr = [9,8,7,1, 100000000000] 
-tests.append(arr)
-arr = [ 0.9, 0.8, 0.7, 0.1, 100000000000] 
-tests.append(arr)
-arr = [0.0001, 0.0002, 0.0003, 1,2,3, 10,20,30, 100,200,300, 1000,2000,3000]
-arr.reverse()
-tests.append(arr)
 
-bucket_worse_arr = []
-arrt = [0.000000000001,0.000000000002,0.000000000003]
-cluster = 10.0
+runTest = True
 
-for i in range(100):
-    for a in arrt:
-        bucket_worse_arr.append(a * cluster)
-    cluster *= 10.0
-bucket_worse_arr.reverse()
+if runTest:
 
-tests.append(bucket_worse_arr)
+    # http://rosettacode.org/wiki/Compare_sorting_algorithms%27_performance
+    def partition(seq, pivot, O):
+        low, middle, up = [], [], []
+        for x in seq:
+            O[0] += 1
+            if x < pivot:
+                low.append(x)
+            elif x == pivot:
+                middle.append(x)
+            else:
+                up.append(x)
+        return low, middle, up
 
-arr = list(range(300))
-arr.reverse()
-tests.append(arr)
+    import random
 
-arr = list(range(3000))
-arr.reverse()
-tests.append(arr)
+    def qsortranpart(seq, O):
+        O[0] += 1
+        size = len(seq)
+        if size < 2: return seq
+        low, middle, up = partition(seq, random.choice(seq), O)
+        return qsortranpart(low, O) + middle + qsortranpart(up, O)
 
-arr = list(range(30000))
-arr.reverse()
-tests.append(arr)
+    verbose = True
 
-arr = list(range(300000))
-arr.reverse()
-tests.append(arr)
+    O = [0]
+    QO = [0]
 
-arr = list(range(3000000))
-arr.reverse()
-tests.append(arr)
-
-for i in range(10):
-
-    random.seed(i)
-    arr = random.sample(range(-1000000, 1000000), 10)
+    tests = []
+    arr = [-5, -10, 0, -3, 8, 5, -1, 10] 
+    tests.append(arr)
+    arr = [9,8,7,1, 100000000000] 
+    tests.append(arr)
+    arr = [ 0.9, 0.8, 0.7, 0.1, 100000000000] 
+    tests.append(arr)
+    arr = [0.0001, 0.0002, 0.0003, 1,2,3, 10,20,30, 100,200,300, 1000,2000,3000]
+    arr.reverse()
     tests.append(arr)
 
-    arr = random.sample(range(-1000000, 1000000), 100)
+    bucket_worse_arr = []
+    arrt = [0.000000000001,0.000000000002,0.000000000003]
+    cluster = 10.0
+
+    for i in range(100):
+        for a in arrt:
+            bucket_worse_arr.append(a * cluster)
+        cluster *= 10.0
+    bucket_worse_arr.reverse()
+
+    tests.append(bucket_worse_arr)
+
+    arr = list(range(3000))
+    arr.reverse()
     tests.append(arr)
 
-    arr = random.sample(range(-1000000, 1000000), 1000)
-    tests.append(arr)
+    for i in range(2):
 
-    arr = random.sample(range(-1000000, 1000000), 10000)
-    tests.append(arr)
+        random.seed(i)
+        arr = random.sample(range(-1000000, 1000000), 10)
+        tests.append(arr)
 
-    arr = random.sample(range(-1000000, 1000000), 100000)
-    tests.append(arr)
+        arr = random.sample(range(-1000000, 1000000), 1000)
+        tests.append(arr)
 
-    arr = random.sample(range(-1000000, 1000000), 1000000)
-    tests.append(arr)
+        arr = random.sample(range(-10000000, 10000000), 10000000)
+        tests.append(arr)
 
-inplace = list(bucket_worse_arr)
-inplace.sort()
+    inplace = list(bucket_worse_arr)
+    inplace.sort()
 
-bb_inplace = list(bucket_worse_arr)
-bb_sort(bb_inplace, O)
+    bb_inplace = list(bucket_worse_arr)
+    bb_sort(bb_inplace, O)
 
-assert bb_inplace == bucket_worse_arr
+    assert bb_inplace == bucket_worse_arr
 
-caseNumber = 1
-allGood = True
-
-if verbose:
-    print("| case | good | iter |  N  |  3N  |  4N  | NLOGN |        N **2     | iter - NLOGN |") 
-    print("|------|------|------|-----|------|------|-------|------------------|--------------|") 
-
-for test in tests:
-
-    O[0] = 0
-
-    result = []
-
-    bb_sort_to_stream(test, result, O)
-
-    assert test != result
-
-    test.sort()
-
-    good = result == test
-
-    if good is False:
-        allGood = False
+    caseNumber = 1
+    allGood = True
 
     if verbose:
-        testLen = len(test)
-        nlogN = testLen * math.log2(len(test))
-        print("| " + str(caseNumber) + " | " + str(good) + " | " + str(O) + " | " + str(testLen) + " | "  + str(testLen * 3) + " | "  + str(testLen * 4) + " | " + str(round(nlogN)) + " | " + str(testLen ** 2) + " | " + str(round(nlogN - O[0])) + " |") 
+        print("| case | good |   iter   |   q iter   |        N    |  NLOGN      |  BB time    |   Q time   |   iter - NLOGN    | Q time - BB time  |") 
+        print("|------|------|----------|------------|-------------|-------------|-------------|------------|-------------------|-------------------|") 
 
-    caseNumber += 1
+    for test in tests:
 
-if verbose:
-    print("|------|------|------|-----|------|------|-------|------------------|--------------|") 
+        O[0] = 0
+
+        result = []
+
+        t1 = time.perf_counter()
+
+        bb_sort_to_stream(test, result, O)
+
+        bbTime = time.perf_counter() - t1
+
+        assert test != result
+
+        t1 = time.perf_counter()
+
+        QO[0] = 0
+
+        qsortTest = qsortranpart(test, QO)
+
+        qTime = time.perf_counter() - t1
+
+        good = result == qsortTest
+
+        if good is False:
+            allGood = False
+
+        if verbose:
+            testLen = len(test)
+            nlogN = round(testLen * math.log2(len(test)), 4)
+            print(f"| {caseNumber} | {good} |   {O[0]}  |    {QO[0]}  |  {testLen}   |   {nlogN}    |  {round(bbTime, 4)}   |   {round(qTime, 4)}  |   {round(nlogN - O[0])}  | {round(qTime - bbTime, 4)} |") 
+
+        caseNumber += 1
+
+    if verbose:
+        print("|------|------|------|-----|------|------|-------|------------------|--------------|") 
+
+    assert allGood
