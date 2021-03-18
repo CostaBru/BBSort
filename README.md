@@ -33,6 +33,42 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
 
 - Add the key to the bucket. ``O(1)``
 
+<details>
+		<summary> Getting buckets implementation </summary>
+  
+  ```python
+
+      def getBucketes(items, count, count_map):
+
+        def getLog(x):
+            if abs(x) <= 1: return x
+            if x < 0: return -math.log2(abs(x))
+            return math.log2(x)
+
+        def GetLinearTransformParams(x1, x2, y1, y2):
+            dx = x1 - x2
+            if dx == 0: return 0, 0
+            return (y1 - y2) / (dx), y1 - (a * x1)
+
+        # can be done in O(N)
+        min_element, max_element, size =  min(items), max(items), count
+
+        a, b     = GetLinearTransformParams(getLog(min_element), getLog(max_element), 0, size)
+        buckets  = [None] * (size + 1)
+
+        for item in items: count_map[item] += 1 
+
+        for key in count_map.keys(): 
+            # ApplyLinearTransform    
+            index = int((a *  getLog(key)) + b) 
+            bucket = buckets[index]
+            if bucket:  bucket.append(key)
+            else:  buckets[index] =  [key]
+        return buckets
+   ```  
+	
+</details>
+
 Once we got all numbers processed. We will have 4 cases: 
 
 1. Empty bucket. Skip it.
@@ -44,6 +80,33 @@ Once we got all numbers processed. We will have 4 cases:
 4. Bucket with more than 3 items. Run the whole procedure for that bucket. ``O(C)``, where ``C`` is equal to 3 in average. 
 
 Perform above checks and steps for each bucket. That will take ``O(N)``. Profit. 
+
+<details>
+		<summary> BB sort implementation </summary>
+  
+  ```python
+
+      def bb_sort_core(enumerable, count, output): 
+
+        def fillStream(val, output, count_map): 
+            for j in range(count_map[val]): output.append(val)
+
+        count_map = defaultdict(int)
+        buckets   = getBucketes(enumerable, count, count_map)
+
+        for bucket in buckets:
+            if bucket:
+                bucketCount = len(bucket)
+                if bucketCount   == 1: fillStream(bucket[0], output, count_map)        
+                elif bucketCount == 2:
+                    b1, b2 = bucket[0], bucket[1]
+                    if b1 > b2: b1, b2 = b2, b1
+                    fillStream(b1, output, count_map)
+                    fillStream(b2, output, count_map)        
+                else:  bb_sort_core(bucket, bucketCount, output)
+   ```  
+	
+</details>
 
 The algorithm is easy and sweet. It can be ported to low level languages in minutes.
 
