@@ -38,9 +38,9 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
   
   ```python
 
-      def getBucketes(items, count, count_map):
+      def GetBucketes(items, count, count_map):
 
-        def getLog(x):
+        def GetLog(x):
             if abs(x) <= 1: return x
             if x < 0: return -math.log2(abs(x))
             return math.log2(x)
@@ -53,7 +53,7 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
         # can be done in O(N)
         min_element, max_element, size =  min(items), max(items), count
 
-        a, b     = GetLinearTransformParams(getLog(min_element), getLog(max_element), 0, size)
+        a, b     = GetLinearTransformParams(GetLog(min_element), GetLog(max_element), 0, size)
         buckets  = [None] * (size + 1)
 
         for item in items: count_map[item] += 1 
@@ -86,24 +86,24 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
   
   ```python
 
-      def bb_sort_core(enumerable, count, output): 
+      def BB_sort_core(enumerable, count, output): 
 
-        def fillStream(val, output, count_map): 
+        def FillStream(val, output, count_map): 
             for j in range(count_map[val]): output.append(val)
 
         count_map = defaultdict(int)
-        buckets   = getBucketes(enumerable, count, count_map)
+        buckets   = GetBucketes(enumerable, count, count_map)
 
         for bucket in buckets:
             if bucket:
                 bucketCount = len(bucket)
-                if bucketCount   == 1: fillStream(bucket[0], output, count_map)        
+                if bucketCount   == 1: FillStream(bucket[0], output, count_map)        
                 elif bucketCount == 2:
                     b1, b2 = bucket[0], bucket[1]
                     if b1 > b2: b1, b2 = b2, b1
-                    fillStream(b1, output, count_map)
-                    fillStream(b2, output, count_map)        
-                else:  bb_sort_core(bucket, bucketCount, output)
+                    FillStream(b1, output, count_map)
+                    FillStream(b2, output, count_map)        
+                else:  BB_sort_core(bucket, bucketCount, output)
    ```  
 	
 </details>
