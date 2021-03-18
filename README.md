@@ -114,9 +114,9 @@ The algorithm is easy and sweet. It can be ported to low level languages in minu
 
 ### Below case is the worst for bucket sorting. The input is not uniformly distributed and has a lot of small clusters far from each other.
 
-| case  | iter |  items(N)  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
-|-------|------|------------|------|------|-------|------------------|--------------|
-| 5 | [906] | 300 | 900 | 1200 | 2469 | 90000 | 1563 |
+|   iter |  items(N)  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
+|--------|------------|------|------|-------|------------------|--------------|
+| [906] | 300 | 900 | 1200 | 2469 | 90000 | 1563 |
 
 ### BB and quick sort comparison
 
