@@ -11,7 +11,7 @@ The ``BB sort`` is very simple and uses ``4N`` in average.
 - Counting sort takes ``4N`` and it is ``not effective`` on large numbers.
 - Bucket is ``O(N ** 2)`` and has ``poor performance`` on non uniformly distributed numbers.
 
-# The key idea
+# Prerequisites
 
 Let's consider that ``rescaling``, math ``log`` and ``rounding`` operations take ``O(1)``. Having that the algorithm below needs ``O(4N)`` time to sort any number array. 
 
