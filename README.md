@@ -60,7 +60,7 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
 
         for key in count_map.keys(): 
             # ApplyLinearTransform    
-            index = int((a *  getLog(key)) + b) 
+            index = int((a *  Get_log(key)) + b) 
             bucket = buckets[index]
             if bucket:  bucket.append(key)
             else:  buckets[index] =  [key]
