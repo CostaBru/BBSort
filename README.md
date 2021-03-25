@@ -97,14 +97,14 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
 
         for bucket in buckets:
             if bucket:
-                bucketCount = len(bucket)
-                if bucketCount   == 1: Fill_stream(bucket[0], output, count_map)        
-                elif bucketCount == 2:
+                bucket_count = len(bucket)
+                if bucket_count   == 1: Fill_stream(bucket[0], output, count_map)        
+                elif bucket_count == 2:
                     b1, b2 = bucket[0], bucket[1]
                     if b1 > b2: b1, b2 = b2, b1
                     Fill_stream(b1, output, count_map)
                     Fill_stream(b2, output, count_map)        
-                else:  BB_sort_core(bucket, bucketCount, output)
+                else:  BB_sort_core(bucket, bucket_count, output)
    ```  
 	
 </details>
