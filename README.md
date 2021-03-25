@@ -2,9 +2,9 @@
 
 In honor of Aleksey Navalny's ``Blue Boxers`` Case.
 
-Python3 implementation of stable hybrid of non comparsion counting and bucket sorting algorithm that works using ``O(N)`` time even for non uniformly distributed numbers.
+Python3 implementation of stable hybrid of non comparison counting and bucket sorting algorithm that works using ``O(N)`` time even for non uniformly distributed numbers.
 
-Was developed on the same day when the magnificant Aleksey Navalny's Blue Boxers investigation was published. 
+Was developed on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation was published. 
 
 The ``BB sort`` is very simple and uses ``4N`` in average. 
 
@@ -19,7 +19,7 @@ We will take the best from the counting and bucket sorting algorithms, use log s
 
 # Algorithm
 
-Count all dupicates and store it in map. Find min and max number in array. ``O(N)``
+Count all duplicates and store it in the map. Find min and max number in the array. ``O(N)``
 
 Calculate parameters to normalize keys to output array size. ``O(1)``
 
@@ -70,7 +70,7 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
 	
 </details>
 
-Once we got all numbers processed. We will have 4 cases: 
+Once we got all numbers processed, we will have 4 cases: 
 
 1. Empty bucket. Skip it.
 
@@ -147,9 +147,9 @@ The cases 9 and 12 where ``N=10 000 000`` show that ``BB sort`` performs much be
 
 Task like ``take M sorted items from N given unsorted items`` is good for ``BB sorting``. In that case first sorted item will be available in just ``O(2N)``.
 
-Hence we have copy of array in buckets and count map we can use source array as output as well.
+Hence, we have copy of array in buckets and count map, we can use source array as output as well.
 
-# Disadvanteges
+# Disadvantages
 
 Because it has to do extra work before sorting, it performs worse than comparsion ``N logN`` sorting algorithms in case of small size arrays with item count less than ``30``.
 
