@@ -41,14 +41,15 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
       def Get_bucketes(items, count, count_map):
 
         def Get_log(x):
-            if abs(x) <= 1: return x
-            if x < 0: return -math.log2(abs(x))
-            return math.log2(x)
+            if x == 0: return 0
+            return math.log2(x) if x > 0 else -math.log2(abs(x))
 
         def Get_linear_transform_params(x1, x2, y1, y2):
             dx = x1 - x2
             if dx == 0: return 0, 0
-            return (y1 - y2) / (dx), y1 - (a * x1)
+            a = (y1 - y2) / dx
+            b = y1 - (a * x1)
+            return a, b
 
         # can be done in O(N)
         min_element, max_element, size =  min(items), max(items), count
