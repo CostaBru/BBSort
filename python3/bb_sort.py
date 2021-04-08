@@ -51,7 +51,7 @@ def bb_sort_to_stream(array, stream, iterCounter):
     bb_sort_core_to_stream(array, len(array), stream, iterCounter)
 
 
-def getBucketes(enumerable, count, countMap, iterCounter):
+def getBuckets(enumerable, count, countMap, iterCounter):
 
     def getLog(x):
         if x == 0: return 0
@@ -97,7 +97,7 @@ def bb_sort_core_to_stream(enumerable, count, output, iterCounter):
 
     countMap = defaultdict(int)
 
-    buckets = getBucketes(enumerable, count, countMap, iterCounter)
+    buckets = getBuckets(enumerable, count, countMap, iterCounter)
 
     for bucket in buckets:
         if bucket:
@@ -123,7 +123,7 @@ def bb_sort_core_to_iter(enumerable, count, iterCounter):
 
     countMap = defaultdict(int)
 
-    buckets = getBucketes(enumerable, count, countMap, iterCounter)
+    buckets = getBuckets(enumerable, count, countMap, iterCounter)
 
     for bucket in buckets:
         if bucket:
