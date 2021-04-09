@@ -49,12 +49,12 @@ std::vector<std::vector<T>> getBuckets(std::vector<T>& array, int count, robin_h
     float minLog = logMap[min_element];
     float maxLog = logMap[max_element];
 
-    std::tuple<float , float> params = GetLinearTransformParams(minLog, maxLog, 0, count);
+    std::tuple<float , float> params = GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
     float a = std::get<0>(params);
     float b = std::get<1>(params);
 
-    std::vector<std::vector<T>> buckets(count  + 1);
+    std::vector<std::vector<T>> buckets(count);
 
     for (int i = 0; i < count; ++i) {
         T item = array[i];
@@ -107,7 +107,7 @@ void bb_sort_core_to_stream(std::vector<T>& array, int count, std::vector<T>& ou
 }
 
 template <typename T>
-void bb_sort(std::vector<T> array, std::vector<T>& outArray){
+void bb_sort(std::vector<T>& array, std::vector<T>& outArray){
 
     robin_hood::unordered_map<T, int> countMap;
     robin_hood::unordered_map<T, float> logMap;

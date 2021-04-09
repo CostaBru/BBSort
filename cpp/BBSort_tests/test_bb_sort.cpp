@@ -116,7 +116,7 @@ void test_reports(){
 
     tests.push_back(range(0, 3000));
 
-    for(int i = 0; i < 2; ++i) {
+    for(int i = 0; i < 20; ++i) {
 
         srand(i);
 
