@@ -9,6 +9,7 @@ set(SOURCE_FILES
 
 set(HEADER_FILES
         ut.h
+        qsortrand.h
         )
 
 add_executable(BBSort_tests ${SOURCE_FILES} ${HEADER_FILES})

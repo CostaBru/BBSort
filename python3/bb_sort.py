@@ -55,7 +55,13 @@ def getBuckets(enumerable, count, countMap, iterCounter):
 
     def getLog(x):
         if x == 0: return 0
-        return math.log2(x) if x > 0 else -math.log2(abs(x))
+
+        ax = abs(x)
+
+        if ax < 2:
+            return x
+
+        return math.log2(x) if x > 0 else -math.log2(ax)
 
     def GetLinearTransformParams(x1, x2, y1, y2):
         dx = x1 - x2

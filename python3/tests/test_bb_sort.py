@@ -73,6 +73,14 @@ class BBSortTest(unittest.TestCase):
         arr = [0.9, 0.8, 0.7, 0.1, 100000000000]
         self.sort_and_test(arr)
 
+    def test_float_no_gap(self):
+        arr = [-10000000, -9999996, -9999995, -9999994, -9999993]
+        self.sort_and_test(arr)
+
+    def test_float_no_gap(self):
+        arr = [0, 1, -1]
+        self.sort_and_test(arr)
+
     def test_reports(self):
 
         tests = []
