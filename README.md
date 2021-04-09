@@ -113,7 +113,13 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
 
 C++20 implementation of BB sort was compared to QSort rand algorithm taken from the rosettacode code base. Unfortunately, a new algorithm didn't over perform classic comparison one. The main reason is the cost of buckets memory allocation.
 
-It shows 10 times slower performance on a large dataset (100m numbers).
+It shows 10x slower performance on a large dataset (100m numbers). Likely, my implementation was not optimized enough, so it has a good potential for execution boosting. 
+
+To improve performance, we can consider following ideas:
+- re-using container of buckets
+- more efficient bucket index calculation
+- hardware log 2 calculation
+- rewriting recursive sorting procedure
 
 # Advantages
 
