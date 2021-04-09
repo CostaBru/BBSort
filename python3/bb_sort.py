@@ -55,12 +55,8 @@ def getBuckets(enumerable, count, countMap, iterCounter):
 
     def getLog(x):
         if x == 0: return 0
-
         ax = abs(x)
-
-        if ax < 2:
-            return x
-
+        if abs(x) < 2: return x
         return math.log2(x) if x > 0 else -math.log2(ax)
 
     def GetLinearTransformParams(x1, x2, y1, y2):
@@ -76,7 +72,7 @@ def getBuckets(enumerable, count, countMap, iterCounter):
 
     for item in enumerable: countMap[item] += 1; min_element = min(min_element, item); max_element = max(max_element, item)
 
-    iterCounter[0] += size
+    iterCounter[0] += size * 3
 
     a, b = GetLinearTransformParams(getLog(min_element), getLog(max_element), 0, size)
 
@@ -84,7 +80,6 @@ def getBuckets(enumerable, count, countMap, iterCounter):
         # ApplyLinearTransform
         index = int((a *  getLog(key)) + b)
         bucket = buckets[index]
-
         if bucket: bucket.append(key)
         else:      buckets[index] = [key]
 
@@ -117,7 +112,6 @@ def bb_sort_core_to_stream(enumerable, count, output, iterCounter):
                 fillStream(b2, output, countMap, iterCounter)
             else:
                 bb_sort_core_to_stream(bucket, bucketCount, output, iterCounter)
-
 
 def bb_sort_core_to_iter(enumerable, count, iterCounter):
 

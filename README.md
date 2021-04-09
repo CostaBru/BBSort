@@ -6,20 +6,20 @@ Python3 implementation of stable hybrid of non comparison counting and bucket so
 
 Was developed on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation was published. 
 
-The ``BB sort`` is very simple and uses ``4N`` in average. 
+The ``BB sort`` is very simple and uses ``5N`` operations in average. 
 
 - Counting sort takes ``4N`` and it is ``not effective`` on large numbers.
 - Bucket is ``O(N ** 2)`` and has ``poor performance`` on non uniformly distributed numbers.
 
 # Prerequisites
 
-Let's consider that ``rescaling``, math ``log`` and ``rounding`` operations take ``O(1)``. Having that the algorithm below needs ``O(4N)`` time to sort any number array. 
+Let's consider that ``rescaling``, math ``log``, and ``rounding`` operations take constant time. Having that the algorithm below needs ``O(4N)`` time to sort any number array. 
 
 We will take the best from the counting and bucket sorting algorithms, use log scale to compress numbers, and keys normalization from 0 to array length for item bucket assignment.
 
 # Algorithm
 
-Count all duplicates and store it in the map. Find min and max number in the array. ``O(N)``
+Count all duplicates and store it in the map. Find min and max number in the array. ``O(3N)``
 
 Calculate parameters to normalize keys to output array size. ``O(1)``
 
@@ -38,10 +38,11 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
   
   ```python
 
-      def Get_bucketes(items, count, count_map):
+      def Get_buckets(items, count, count_map):
 
         def Get_log(x):
-            if x == 0: return 0
+            if x == 0:     return 0
+            if abs(x) < 2: return x
             return math.log2(x) if x > 0 else -math.log2(abs(x))
 
         def Get_linear_transform_params(x1, x2, y1, y2):
@@ -51,7 +52,6 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
             b = y1 - (a * x1)
             return a, b
 
-        # can be done in O(N)
         min_element, max_element, size =  min(items), max(items), count
 
         a, b     = Get_linear_transform_params(Get_log(min_element), Get_log(max_element), 0, size)
@@ -93,7 +93,7 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
             for j in range(count_map[val]): output.append(val)
 
         count_map = defaultdict(int)
-        buckets   = Get_bucketes(enumerable, count, count_map)
+        buckets   = Get_buckets(enumerable, count, count_map)
 
         for bucket in buckets:
             if bucket:
@@ -109,37 +109,11 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
 	
 </details>
 
-The algorithm is easy and sweet. It can be ported to low level languages in minutes.
+# Performance 
 
-# Performance
+C++20 implementation of BB sort was compared to QSort rand algorithm taken from the rosettacode code base. Unfortunately, a new algorithm didn't over perform classic comparison one. The main reason is the cost of buckets memory allocation.
 
-### Below case is the worst for bucket sorting. The input is not uniformly distributed and has a lot of small clusters far from each other.
-
-|   iter |  items(N)  |  3N  |  4N  | NLOGN |        N **2     | NLOGN - iter |
-|--------|------------|------|------|-------|------------------|--------------|
-| [906] | 300 | 900 | 1200 | 2469 | 90000 | 1563 |
-
-### BB and quick sort comparison
-
-The quick sort python implementation was taken from http://rosettacode.org/wiki/Compare_sorting_algorithms%27_performance
-
-| case |   iter   |   q iter   |        N    |  NLOGN      |  BB time    |   Q time   |   iter - NLOGN    | Q time - BB time  |
-|------|----------|------------|-------------|-------------|-------------|------------|-------------------|-------------------|
-| 1 |  24  |    37  |  8   |   24.0    |  0.0   |   0.0  |   0  | 0.0 |
-| 2 |  23  |    17  |  5   |   11.6096    |  0.0001   |   0.0  |   -11  | -0.0001 |
-| 3 |  23  |    18  |  5   |   11.6096    |  0.0   |   0.0  |   -11  | -0.0 |
-| 4 |  51  |    78  |  15   |   58.6034    |  0.0001   |   0.0001  |   8  | -0.0 |
-| 5 |  1168  |    3220  |  300   |   2468.6456    |  0.0009   |   0.0008  |   1301  | -0.0001 |
-| 6 |  13178  |    46330  |  3000   |   34652.2404    |  1.0045   |   0.0133  |   21474  | -0.9911 |
-| 7 |  46  |    39  |  10   |   33.2193    |  0.0001   |   0.0  |   -13  | -0.0 |
-| 8 |  4896  |    12184  |  1000   |   9965.7843    |  0.0039   |   0.0055  |   5070  | 0.0015 |
-| 9 |  47348048  |    321673850  |  10000000   |   232534966.6421    |  67.2672   |   105.4689  |   185186919  | 38.2017 |
-| 10 | 46  |    54  |  10   |   33.2193    |  0.0001   |   0.122  |   -13  | 0.1219 |
-| 11 | 4954  |    12561  |  1000   |   9965.7843    |  0.0051   |   0.0042  |   5012  | -0.001 |
-| 12 | 47350508  |    305759432  |  10000000   |   232534966.6421    |  77.2285   |   104.457  |   185184459  | 27.2285 |
-
-
-The cases 9 and 12 where ``N=10 000 000`` show that ``BB sort`` performs much better than ``quick sort`` on huge lists.
+It shows 10 times slower performance on a large dataset (100m numbers).
 
 # Advantages
 
@@ -151,7 +125,7 @@ Hence, we have copy of array in buckets and count map, we can use source array a
 
 # Disadvantages
 
-Because it has to do extra work before sorting, it performs worse than comparsion ``N logN`` sorting algorithms in case of small size arrays with item count less than ``30``.
+Because it has to do extra work before sorting, it performs worse than comparison ``N logN`` sorting algorithms in case of small size arrays with item count less than ``30``.
 
 # References
 
