@@ -5,77 +5,73 @@
 #include <vector>
 #include <tuple>
 #include <cmath>
+#include <chrono>
+
+inline float mFast_Log2(float val) {
+    union { float val; int32_t x; } u = { val };
+    float log_2 = (float)(((u.x >> 23) & 255) - 128);
+    u.x   &= ~(255 << 23);
+    u.x   += 127 << 23;
+    log_2 += ((-0.3358287811f) * u.val + 2.0f) * u.val  -0.65871759316667f;
+    return (log_2);
+}
 
 inline float getLog(float x)
 {
-    if (x == 0){
-        return 0;
-    }
+    float abs = std::abs(x);
 
-    float as = std::abs(x);
-
-    if (as < 2){
+    if (abs < 2){
         return x;
     }
 
     if (x < 0){
-        return -std::log2(as);
+        return -mFast_Log2(abs);
     }
 
-    return std::log2(x);
-}
-
-inline std::tuple<float , float> GetLinearTransformParams(float x1, float x2, float y1, float y2) {
-    float dx = x1 - x2;
-    if (dx == 0.0) [[unlikely]]
-    {
-        return std::make_tuple(0.0, 0.0);
-    }
-
-    float a = (y1 - y2) / dx;
-    float b = y1 - (a * x1);
-
-    return std::make_tuple(a, b);
+    return mFast_Log2(x);
 }
 
 template <typename T>
-std::vector<std::vector<T>> getBuckets(const std::vector<T>& array, int count, robin_hood::unordered_map<T, float>& logMap) {
+inline std::vector<std::vector<T>> getBuckets(const std::vector<T>& array, int count) {
 
     T min_element = *std::min_element(array.begin(), array.end());
     T max_element = *std::max_element(array.begin(), array.end());
 
-    float minLog = logMap[min_element];
-    float maxLog = logMap[max_element];
+    float minLog = getLog(min_element);
+    float maxLog = getLog(max_element);
 
-    std::tuple<float , float> params = GetLinearTransformParams(minLog, maxLog, 0, count - 1);
+    // GetLinearTransform
+    float x1 = minLog;
+    float x2 = maxLog;
+    float y1 = 0.0;
+    float y2 = count - 1;
 
-    float a = std::get<0>(params);
-    float b = std::get<1>(params);
+    float a = 0.0;
+    float b = 0.0;
+
+    float dx = x1 - x2;
+    if (dx != 0.0) [[likely]] {
+         a = (y1 - y2) / dx;
+         b = y1 - (a * x1);
+    }
 
     std::vector<std::vector<T>> buckets(count);
 
     for (int i = 0; i < count; ++i) {
         T item = array[i];
         // ApplyLinearTransform
-        int index = ((a *  logMap[item]) + b);
+        int index = ((a *  getLog(item) + b));
         buckets[index].push_back(item);
     }
 
     return buckets;
 }
 
-template <typename T>
-inline void fillStream(const T& val, std::vector<T>& output, robin_hood::unordered_map<T, int>& countMap){
-    int valCount = countMap[val];
-    for (int i = 0; i < valCount; ++i) {
-        output.push_back(val);
-    }
-}
 
 template <typename T>
-void bb_sort_core_to_stream(const std::vector<T>& array, const int count, std::vector<T>& output, robin_hood::unordered_map<T, int>& countMap, robin_hood::unordered_map<T, float>& logMap) {
+void bb_sort_core_to_stream(const std::vector<T>& array, const int count, std::vector<T>& output) {
 
-    auto buckets = getBuckets<T>(array, count, logMap);
+    auto buckets = getBuckets<T>(array, count);
     for (int i = 0; i < buckets.size(); ++i) {
         auto bucket = buckets[i];
         switch (bucket.size()){
@@ -83,7 +79,7 @@ void bb_sort_core_to_stream(const std::vector<T>& array, const int count, std::v
                 continue;
             }
             case 1:  {
-                fillStream<T>(bucket[0], output, countMap);
+                output.push_back(bucket[0]);
                 break;
             }
             case 2:  {
@@ -92,12 +88,12 @@ void bb_sort_core_to_stream(const std::vector<T>& array, const int count, std::v
                 if (b1 > b2) {
                     std::swap(b1, b2);
                 }
-                fillStream<T>(b1, output, countMap);
-                fillStream<T>(b2, output, countMap);
+                output.push_back(b1);
+                output.push_back(b2);
                 break;
             }
             default:
-                bb_sort_core_to_stream<T>(bucket, bucket.size(), output, countMap, logMap);
+                bb_sort_core_to_stream<T>(bucket, bucket.size(), output);
                 break;
         }
     }
@@ -106,22 +102,7 @@ void bb_sort_core_to_stream(const std::vector<T>& array, const int count, std::v
 template <typename T>
 void bb_sort(const std::vector<T>& array, std::vector<T>& outArray){
 
-    robin_hood::unordered_map<T, int> countMap;
-    robin_hood::unordered_map<T, float> logMap;
-
-    for (int i = 0; i < array.size(); ++i) {
-
-        T item = array[i];
-
-        countMap[item] += 1;
-
-        if (!logMap.contains(item))
-        {
-            logMap[item] = getLog(item);
-        }
-    }
-
-    bb_sort_core_to_stream<T>(array, array.size(), outArray, countMap, logMap);
+    bb_sort_core_to_stream<T>(array, array.size(), outArray);
 }
 
 #endif
