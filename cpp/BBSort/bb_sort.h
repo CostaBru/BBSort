@@ -1,10 +1,8 @@
 #ifndef BBSort_H
 #define BBSort_H
 
-#include "bb_sort.h"
 #include "fast_map.h"
 #include <vector>
-#include <bit>
 #include <tuple>
 #include <cmath>
 
@@ -14,7 +12,7 @@ inline float getLog(float x)
         return 0;
     }
 
-    double as = std::abs(x);
+    float as = std::abs(x);
 
     if (as < 2){
         return x;
@@ -29,19 +27,19 @@ inline float getLog(float x)
 
 inline std::tuple<float , float> GetLinearTransformParams(float x1, float x2, float y1, float y2) {
     float dx = x1 - x2;
-    if (dx == 0)
+    if (dx == 0.0) [[unlikely]]
     {
-        return std::make_tuple(0, 0);
+        return std::make_tuple(0.0, 0.0);
     }
 
-    float a = ((float)(y1 - y2)) / dx;
+    float a = (y1 - y2) / dx;
     float b = y1 - (a * x1);
 
     return std::make_tuple(a, b);
 }
 
 template <typename T>
-std::vector<std::vector<T>> getBuckets(std::vector<T>& array, int count, robin_hood::unordered_map<T, float>& logMap) {
+std::vector<std::vector<T>> getBuckets(const std::vector<T>& array, int count, robin_hood::unordered_map<T, float>& logMap) {
 
     T min_element = *std::min_element(array.begin(), array.end());
     T max_element = *std::max_element(array.begin(), array.end());
@@ -67,7 +65,7 @@ std::vector<std::vector<T>> getBuckets(std::vector<T>& array, int count, robin_h
 }
 
 template <typename T>
-inline void fillStream(T& val, std::vector<T>& output, robin_hood::unordered_map<T, int>& countMap){
+inline void fillStream(const T& val, std::vector<T>& output, robin_hood::unordered_map<T, int>& countMap){
     int valCount = countMap[val];
     for (int i = 0; i < valCount; ++i) {
         output.push_back(val);
@@ -75,11 +73,10 @@ inline void fillStream(T& val, std::vector<T>& output, robin_hood::unordered_map
 }
 
 template <typename T>
-void bb_sort_core_to_stream(std::vector<T>& array, int count, std::vector<T>& output, robin_hood::unordered_map<T, int>& countMap, robin_hood::unordered_map<T, float>& logMap) {
+void bb_sort_core_to_stream(const std::vector<T>& array, const int count, std::vector<T>& output, robin_hood::unordered_map<T, int>& countMap, robin_hood::unordered_map<T, float>& logMap) {
 
     auto buckets = getBuckets<T>(array, count, logMap);
-    int bs = buckets.size();
-    for (int i = 0; i < bs; ++i) {
+    for (int i = 0; i < buckets.size(); ++i) {
         auto bucket = buckets[i];
         switch (bucket.size()){
             case 0: {
@@ -107,14 +104,12 @@ void bb_sort_core_to_stream(std::vector<T>& array, int count, std::vector<T>& ou
 }
 
 template <typename T>
-void bb_sort(std::vector<T>& array, std::vector<T>& outArray){
+void bb_sort(const std::vector<T>& array, std::vector<T>& outArray){
 
     robin_hood::unordered_map<T, int> countMap;
     robin_hood::unordered_map<T, float> logMap;
 
-    int  count = array.size();
-
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < array.size(); ++i) {
 
         T item = array[i];
 
