@@ -54,7 +54,6 @@ def bb_sort_to_stream(array, stream, iterCounter):
 def getBuckets(enumerable, count, countMap, iterCounter):
 
     def getLog(x):
-        if x == 0: return 0
         ax = abs(x)
         if abs(x) < 2: return x
         return math.log2(x) if x > 0 else -math.log2(ax)

@@ -81,6 +81,10 @@ class BBSortTest(unittest.TestCase):
         arr = [0, 1, -1]
         self.sort_and_test(arr)
 
+    def test_duplicates(self):
+        arr = [10, 20, 40, 50, 60, 69, 70, 70 , 70 , 70 , 70]
+        self.sort_and_test(arr)
+
     def test_reports(self):
 
         tests = []
