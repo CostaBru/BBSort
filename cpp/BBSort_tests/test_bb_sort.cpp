@@ -134,9 +134,10 @@ void test_reports(){
 
         srand(i);
 
-        tests.push_back(sample(range(-100000, 100000), 10));
-        tests.push_back(sample(range(-100000, 100000), 1000));
         tests.push_back(sample(range(-100000, 100000), 100000));
+        tests.push_back(sample(range(-100000, 100000), 1000000));
+        tests.push_back(sample(range(-100000, 100000), 10000000));
+        tests.push_back(sample(range(-100000, 100000), 100000000));
         tests.push_back(sample(range(-100000, 100000), 2000000000));
     }
 
