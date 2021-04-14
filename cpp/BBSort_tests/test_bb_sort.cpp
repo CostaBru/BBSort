@@ -85,6 +85,14 @@ void test_float_huge_gap(){
     sort_and_test(arr);
 }
 
+void test_duplicates(){
+
+    std::cout << "test_duplicates" << std::endl;
+
+    std::vector<float> arr = {10, 20, 40, 50, 60, 69, 70, 70 , 70 , 70 , 70};
+    sort_and_test(arr);
+}
+
 std::vector<long> range(long start, long end){
 
     std::vector<long> t;
@@ -95,17 +103,25 @@ std::vector<long> range(long start, long end){
     return t;
 }
 
-std::vector<long> sample(std::vector<long> population, int count){
+std::vector<long> sample(std::vector<long> population, long long count){
 
-    std::vector<long> sampled;
+    std::vector<long> result;
 
-    std::sample(population.begin(),
-                population.end(),
-                std::back_inserter(sampled),
-                count,
-                std::mt19937{std::random_device{}()});
+    while (result.size() <= count) {
 
-    return sampled;
+        std::vector<long> sampled;
+
+        std::sample(population.begin(),
+                    population.end(),
+                    std::back_inserter(sampled),
+                    count,
+                    std::mt19937{std::random_device{}()});
+
+        for(auto i: sampled){
+            result.push_back(i);
+        }
+    }
+    return result;
 }
 
 void test_reports(){
@@ -114,16 +130,14 @@ void test_reports(){
 
     std::vector<std::vector<long>> tests;
 
-    tests.push_back(range(0, 3000));
-
-    for(int i = 0; i < 20; ++i) {
+    for(int i = 0; i < 1; ++i) {
 
         srand(i);
 
         tests.push_back(sample(range(-100000, 100000), 10));
         tests.push_back(sample(range(-100000, 100000), 1000));
         tests.push_back(sample(range(-100000, 100000), 100000));
-        tests.push_back(sample(range(-100000, 100000), 10000000));
+        tests.push_back(sample(range(-100000, 100000), 2000000000));
     }
 
     int caseNumber = 1;
@@ -144,7 +158,7 @@ void test_reports(){
             quicksortrand(qsortTest.begin(), qsortTest.end(), std::less<long>());
             const auto stop = std::chrono::high_resolution_clock::now();
             const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-            std::cout << "[" << "qsort" << "] " << ns.count() << " ns\n" << std::endl;
+            std::cout << "[" << "qsort" << "] " << ns.count() << " ns" <<  " size: " << test.size() << std::endl;
         }
 
         std::vector<long> result;
@@ -154,7 +168,7 @@ void test_reports(){
             bb_sort(test, result);
             const auto stop = std::chrono::high_resolution_clock::now();
             const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-            std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns\n" << std::endl;
+            std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns" <<  " size: " << test.size() << std::endl;
         }
 
         bool good = qsortTest.size() == result.size();
@@ -194,6 +208,8 @@ int main() {
         test_huge_gap();
 
         test_float_huge_gap();
+
+        test_duplicates();
 
         test_reports();
 
