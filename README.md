@@ -112,22 +112,20 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
 
 C++20 implementation of BB sort was compared to QSort rand algorithm taken from the Rosettacode code base web site.
 
-BB sort shows the 2x better performance on a 2 billion numbers dataset only.
+BB sort shows the better performance starting N > 10 million.
 
-N: 2 000 200 000, time: ns, CPU: AMD Ryzen 7 4800H, RAM: 64.0 GB
+N: 1 000 000, CPU: AMD Ryzen 7 4800H, RAM: 64.0 GB, --O3
 
-| case |    qsort      |   bb sort    |
-|------|---------------|--------------|
-|   1  | 10 0942870800 | 4 1747348400 |
-|   2  | 9  7358506600 | 4 1196068700 |
-|   3  | 10 0418040800 | 4 5208693300 |
-|   4  | 10 0942870800 | 4 1747348400 |
-|   5  | 9  9400568300 | 4 3841414700 |
-|   6  | 10 1276218900 | 4 2484542300 |
+| case |    N  |    qsort (ns) |   bb sort (ns )|
+|------|-------|---------------|------------------|
+|   1  | 1.2   |      68722100 |    121708200     |
+|   2  | 10.2  |    5 23862600 |   4 12538400     |
+|   3  | 100   |   51 34720600 |  34 66300900     |
+|   4  | 2 000 |  987 25611300 | 647 94530500     |
 
 To make more fast, we can consider following ideas:
 - re-using container of buckets by using poolable vector data structure.
-- getting rid of map access bottleneck by introducing {T value, float log, int cnt} tuple as sortable item. 
+- using min\max heap. 
 
 # Advantages
 
