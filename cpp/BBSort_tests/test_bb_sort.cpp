@@ -140,59 +140,61 @@ void test_reports(){
         tests.push_back(sample(range(-100000, 100000), 2000000000));
     }
 
-    int caseNumber = 1;
-    bool allGood = true;
+    for(int i = 0; i < 10; ++i) {
 
-    for (auto test : tests) {
+        int caseNumber = 1;
+        bool allGood = true;
 
-        std::cout << caseNumber << std::endl;
+        for (auto test : tests) {
 
-        std::random_device rd;
-        std::mt19937 g(rd());
+            std::cout << caseNumber << std::endl;
 
-        std::shuffle(test.begin(), test.end(), g);
+            std::random_device rd;
+            std::mt19937 g(rd());
 
-        std::vector<long> qsortTest(test);
-        {
-            const auto start = std::chrono::high_resolution_clock::now();
-            quicksortrand(qsortTest.begin(), qsortTest.end(), std::less<long>());
-            const auto stop = std::chrono::high_resolution_clock::now();
-            const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-            std::cout << "[" << "qsort" << "] " << ns.count() << " ns" <<  " size: " << test.size() << std::endl;
-        }
+            std::shuffle(test.begin(), test.end(), g);
 
-        std::vector<long> result;
-        result.reserve(test.size());
-        {
-            const auto start = std::chrono::high_resolution_clock::now();
-            bb_sort(test, result);
-            const auto stop = std::chrono::high_resolution_clock::now();
-            const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-            std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns" <<  " size: " << test.size() << std::endl;
-        }
-
-        bool good = qsortTest.size() == result.size();
-
-        for (int i = 0; i < qsortTest.size(); ++i) {
-
-            auto eq = qsortTest[i] == result[i];
-
-            if (!eq){
-                std::cout << "Not eq" << i << " " << qsortTest[i] << "!=" << result[i] << std::endl;
+            std::vector<long> qsortTest(test);
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                quicksortrand(qsortTest.begin(), qsortTest.end(), std::less<long>());
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "qsort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
-            good = eq && good;
+            std::vector<long> result;
+            result.reserve(test.size());
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                bb_sort(test, result);
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            bool good = qsortTest.size() == result.size();
+
+            for (int i = 0; i < qsortTest.size(); ++i) {
+
+                auto eq = qsortTest[i] == result[i];
+
+                if (!eq) {
+                    std::cout << "Not eq" << i << " " << qsortTest[i] << "!=" << result[i] << std::endl;
+                }
+
+                good = eq && good;
+            }
+
+            if (!good) {
+                allGood = false;
+            }
+
+            caseNumber += 1;
         }
 
-        if (!good)
-        {
-            allGood = false;
-        }
-
-        caseNumber += 1;
+        boost::ut::expect(allGood);
     }
-
-    boost::ut::expect(allGood);
 }
 
 int main() {
