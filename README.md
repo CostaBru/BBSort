@@ -40,8 +40,7 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
 
       def Get_buckets(items, count, count_map):
 
-        def Get_log(x):
-            if x == 0:     return 0
+        def Get_log(x):            
             if abs(x) < 2: return x
             return math.log2(x) if x > 0 else -math.log2(abs(x))
 
@@ -54,8 +53,8 @@ For each key in the map. ``O(M)`` where ``M`` number of unique items.
 
         min_element, max_element, size =  min(items), max(items), count
 
-        a, b     = Get_linear_transform_params(Get_log(min_element), Get_log(max_element), 0, size)
-        buckets  = [None] * (size + 1)
+        a, b     = Get_linear_transform_params(Get_log(min_element), Get_log(max_element), 0, size - 1)
+        buckets  = [None] * size
 
         for item in items: count_map[item] += 1 
 
@@ -111,16 +110,24 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
 
 # Performance 
 
-C++20 implementation of BB sort was compared to QSort rand algorithm taken from the Rosettacode code base web site. 
+C++20 implementation of BB sort was compared to QSort rand algorithm taken from the Rosettacode code base web site.
 
-Unfortunately, a new algorithm didn't over perform classic comparison one. The main reasons are the cost of buckets memory allocation, and the cost of access to the map value.
+BB sort shows the 2x better performance on a 2 billion numbers dataset only.
 
-It shows the same performance on a 2 billion numbers dataset. Likely, my implementation was not optimized enough, so it has a good potential for execution boosting. 
+N: 2 000 200 000, time: ns, CPU: AMD Ryzen 7 4800H, RAM: 64.0 GB
 
-To make it better, we can consider following ideas:
-- re-using container of buckets
-- hardware or fast approximate log 2 calculation
-- rewriting recursive sorting procedure
+| case |    qsort      |   bb sort    |
+|------|---------------|--------------|
+|   1  | 10 0942870800 | 4 1747348400 |
+|   2  | 9  7358506600 | 4 1196068700 |
+|   3  | 10 0418040800 | 4 5208693300 |
+|   4  | 10 0942870800 | 4 1747348400 |
+|   5  | 9  9400568300 | 4 3841414700 |
+|   6  | 10 1276218900 | 4 2484542300 |
+
+To make more fast, we can consider following ideas:
+- re-using container of buckets by using poolable vector data structure.
+- getting rid of map access bottleneck by introducing {T value, float log, int cnt} tuple as sortable item. 
 
 # Advantages
 
