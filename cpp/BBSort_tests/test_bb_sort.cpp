@@ -27,10 +27,9 @@ void sort_and_test(std::vector<T> arr){
     std::vector<T> goldenArr(arr);
     sort(goldenArr.begin(), goldenArr.end());
 
-    std::vector<T> bb_rez;
-    bb_sort(arrCopy, bb_rez);
+    bb_sort(arrCopy);
 
-    test_arrays<T>(bb_rez, goldenArr);
+    test_arrays<T>(arrCopy, goldenArr);
 }
 
 void test_bucket_worst_1() {
@@ -93,9 +92,10 @@ void test_duplicates(){
     sort_and_test(arr);
 }
 
-std::vector<long> range(long start, long end){
+template <typename T>
+std::vector<T> range(T start, T end){
 
-    std::vector<long> t;
+    std::vector<T> t;
     for (int i = start; i < end; ++i) {
         t.push_back(i);
     }
@@ -103,13 +103,14 @@ std::vector<long> range(long start, long end){
     return t;
 }
 
-std::vector<long> sample(std::vector<long> population, long long count){
+template <typename T>
+std::vector<T> sample(std::vector<T> population, long long count){
 
-    std::vector<long> result;
+    std::vector<T> result;
 
     while (result.size() <= count) {
 
-        std::vector<long> sampled;
+        std::vector<T> sampled;
 
         std::sample(population.begin(),
                     population.end(),
@@ -124,24 +125,25 @@ std::vector<long> sample(std::vector<long> population, long long count){
     return result;
 }
 
+template <typename T>
 void test_reports(){
 
     std::cout << "test_reports" << std::endl;
 
-    std::vector<std::vector<long>> tests;
+    std::vector<std::vector<T>> tests;
 
     for(int i = 0; i < 1; ++i) {
 
         srand(i);
 
-        tests.push_back(sample(range(-100000, 100000), 100000));
-        tests.push_back(sample(range(-100000, 100000), 1000000));
-        tests.push_back(sample(range(-100000, 100000), 10000000));
-        tests.push_back(sample(range(-100000, 100000), 100000000));
-        tests.push_back(sample(range(-100000, 100000), 2000000000));
+        tests.push_back(sample(range<T>(-100000, 100000), 100000));
+        tests.push_back(sample(range<T>(-100000, 100000), 1000000));
+        tests.push_back(sample(range<T>(-100000, 100000), 10000000));
+        tests.push_back(sample(range<T>(-100000, 100000), 100000000));
+        tests.push_back(sample(range<T>(-100000, 100000), 2000000000));
     }
 
-    for(int i = 0; i < 10; ++i) {
+    for(int i = 0; i < 3; ++i) {
 
         int caseNumber = 1;
         bool allGood = true;
@@ -155,33 +157,32 @@ void test_reports(){
 
             std::shuffle(test.begin(), test.end(), g);
 
-            std::vector<long> qsortTest(test);
+            std::vector<T> qsortTest(test);
             {
                 const auto start = std::chrono::high_resolution_clock::now();
-                quicksortrand(qsortTest.begin(), qsortTest.end(), std::less<long>());
+                quicksortrand(qsortTest.begin(), qsortTest.end(), std::less<T>());
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
                 std::cout << "[" << "qsort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
-            std::vector<long> result;
-            result.reserve(test.size());
+            std::vector<T> bbsortTest(test);
             {
                 const auto start = std::chrono::high_resolution_clock::now();
-                bb_sort(test, result);
+                bb_sort(bbsortTest);
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
                 std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
-            bool good = qsortTest.size() == result.size();
+            bool good = qsortTest.size() == bbsortTest.size();
 
             for (int i = 0; i < qsortTest.size(); ++i) {
 
-                auto eq = qsortTest[i] == result[i];
+                auto eq = qsortTest[i] == bbsortTest[i];
 
                 if (!eq) {
-                    std::cout << "Not eq" << i << " " << qsortTest[i] << "!=" << result[i] << std::endl;
+                    std::cout << "Not eq" << i << " " << qsortTest[i] << "!=" << bbsortTest[i] << std::endl;
                 }
 
                 good = eq && good;
@@ -214,7 +215,7 @@ int main() {
 
         test_duplicates();
 
-        test_reports();
+        test_reports<long>();
 
     }
     catch (const std::exception &e) {

@@ -6,8 +6,7 @@
 #include <tuple>
 #include <cmath>
 #include <stack>
-#include <minMaxHeap.h>
-
+#include <min_max_heap.h>
 
 
 inline float fastLog2(const float val) {
@@ -16,7 +15,7 @@ inline float fastLog2(const float val) {
     u.x   &= ~(255 << 23);
     u.x   += 127 << 23;
     lg2 += ((-0.3358287811f) * u.val + 2.0f) * u.val - 0.65871759316667f;
-    return (lg2);
+    return lg2;
 }
 
 inline float getLog(const float x)
@@ -27,27 +26,26 @@ inline float getLog(const float x)
         return x;
     }
 
-    if (x < 0){
-        return -fastLog2(abs);
-    }
+    float lg = fastLog2(abs);
 
-    return fastLog2(x);
+    return x < 0 ? -lg : lg;
 }
 
 inline std::tuple<float , float> GetLinearTransformParams(const float x1, const float x2, const float y1, const float y2) {
     float dx = x1 - x2;
-    if (dx == 0.0) [[unlikely]] {
-        return std::make_tuple(0.0, 0.0);
+
+    if (dx != 0.0) [[likely]] {
+        float a = (y1 - y2) / dx;
+        float b = y1 - (a * x1);
+
+        return std::make_tuple(a, b);
     }
 
-    float a = (y1 - y2) / dx;
-    float b = y1 - (a * x1);
-
-    return std::make_tuple(a, b);
+    return std::make_tuple(0.0, 0.0);
 }
 
 template <typename T>
-class sort_item {
+struct sort_item {
 public :
     T value;
     int count;
@@ -80,8 +78,11 @@ public :
     }
 };
 
+template<typename T>
+std::stack<minmax::min_max_heap<sort_item<T>>> getTopStackBuckets(const std::vector<T> &array);
+
 template <typename T>
-std::vector<minmax::MinMaxHeap<sort_item<T>>> getBuckets(const minmax::MinMaxHeap<sort_item<T>>& iterable) {
+std::vector<minmax::min_max_heap<sort_item<T>>> getBuckets(const minmax::min_max_heap<sort_item<T>>& iterable) {
 
     sort_item minEl = iterable.findMin();
     sort_item maxEl = iterable.findMax();
@@ -96,7 +97,7 @@ std::vector<minmax::MinMaxHeap<sort_item<T>>> getBuckets(const minmax::MinMaxHea
     float a = std::get<0>(params);
     float b = std::get<1>(params);
 
-    std::vector<minmax::MinMaxHeap<sort_item<T>>> buckets(count);
+    std::vector<minmax::min_max_heap<sort_item<T>>> buckets(count);
 
     for (auto const item : iterable) {
         // ApplyLinearTransform
@@ -109,47 +110,73 @@ std::vector<minmax::MinMaxHeap<sort_item<T>>> getBuckets(const minmax::MinMaxHea
 }
 
 template <typename T>
-inline void fillStream(const sort_item<T>& val, std::vector<T>& output){
+inline void fillStream(const sort_item<T>& val, std::vector<T>& output, int index){
     for (int i = 0; i < val.count; ++i) {
-        output.push_back(val.value);
+        output[index + i] = val.value;
     }
 }
 
 template <typename T>
-void bbSortToStream(std::stack<minmax::MinMaxHeap<sort_item<T>>>& st, std::vector<T>& output) {
+int case0(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& output, minmax::min_max_heap<sort_item<T>>& bucket, int index) {
+    return 0;
+}
+
+template <typename T>
+int case1(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& output, minmax::min_max_heap<sort_item<T>>& bucket, int index) {
+    sort_item b1 = *bucket.begin();
+    fillStream<T>(b1, output, index);
+    return b1.count;
+}
+
+template <typename T>
+int case2(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& output, minmax::min_max_heap<sort_item<T>>& bucket, int index) {
+    auto it = bucket.begin();
+    sort_item b2 = *it;
+    it++;
+    sort_item b1 = *it;
+    fillStream<T>(b1, output, index);
+    fillStream<T>(b2, output, index + b1.count);
+    return b1.count + b2.count;
+}
+
+template <typename T>
+int case3(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& output, minmax::min_max_heap<sort_item<T>>& bucket, int index) {
+    auto newBuckets = getBuckets<T>(bucket);
+    for (int i = newBuckets.size() - 1; i >= 0; --i) {
+        auto nb = newBuckets[i];
+        st.push(nb);
+    }
+    return 0;
+}
+
+template<typename Func>
+struct func_array {
+    static Func *const jumpTable[];
+};
+
+template<typename Func>
+Func *const func_array<Func>::jumpTable[] = { case0, case1, case2, case3 };
+
+template <typename T>
+void bbSortToStream(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& output) {
+
+    int index = 0;
 
     while (st.size() > 0) {
         auto bucket = st.top();
         st.pop();
-        switch (bucket.size()) {
-            case 0: {
-                continue;
-            }
-            case 1: {
-                fillStream<T>(bucket.findMin(), output);
-                break;
-            }
-            case 2: {
-                sort_item b1 = bucket.findMin();
-                sort_item b2 = bucket.findMax();
 
-                fillStream<T>(b1, output);
-                fillStream<T>(b2, output);
-                break;
-            }
-            default:
-                auto newBuckets = getBuckets<T>(bucket);
-                for (int i = newBuckets.size() - 1; i >= 0; --i){
-                    auto nb = newBuckets[i];
-                    st.push(nb);
-                }
-                break;
-        }
+        auto caseIndex = std::min(bucket.size(), 3U);
+
+        auto jumpFunc = func_array<int(std::stack<minmax::min_max_heap<sort_item<T>>> &, std::vector<T> &,
+        minmax::min_max_heap<sort_item<T>> &, int)>::jumpTable[caseIndex];
+
+        index += jumpFunc(st, output, bucket, index);
     }
 }
 
 template <typename T>
-std::stack<minmax::MinMaxHeap<sort_item<T>>> prepareTopBuckets(const std::vector<sort_item<T>>& items, const sort_item<T>& minSortEl, const sort_item<T>& maxSortEl) {
+std::stack<minmax::min_max_heap<sort_item<T>>> prepareTopBuckets(const std::vector<sort_item<T>>& items, const sort_item<T>& minSortEl, const sort_item<T>& maxSortEl) {
 
     float minLog = getLog(minSortEl.value);
     float maxLog = getLog(maxSortEl.value);
@@ -161,7 +188,7 @@ std::stack<minmax::MinMaxHeap<sort_item<T>>> prepareTopBuckets(const std::vector
     float a = std::get<0>(params);
     float b = std::get<1>(params);
 
-    std::vector<minmax::MinMaxHeap<sort_item<T>>> buckets(count);
+    std::vector<minmax::min_max_heap<sort_item<T>>> buckets(count);
 
     //pushing distinct items only
     for (auto const item : items) {
@@ -171,7 +198,7 @@ std::stack<minmax::MinMaxHeap<sort_item<T>>> prepareTopBuckets(const std::vector
         buckets[index].push(item);
     }
 
-    std::stack<minmax::MinMaxHeap<sort_item<T>>> st;
+    std::stack<minmax::min_max_heap<sort_item<T>>> st;
 
     for (int i = buckets.size() - 1; i >= 0; --i){
         auto nb = buckets[i];
@@ -181,11 +208,19 @@ std::stack<minmax::MinMaxHeap<sort_item<T>>> prepareTopBuckets(const std::vector
 }
 
 template <typename T>
-void bb_sort(const std::vector<T>& array, std::vector<T>& outArray){
+void bb_sort(std::vector<T>& array){
 
-    if (array.size() == 0){
+    if (array.size() <= 1){
         return;
     }
+
+    std::stack<minmax::min_max_heap<sort_item<T>>> topBucketsStack = getTopStackBuckets(array);
+
+    bbSortToStream<T>(topBucketsStack, array);
+}
+
+template<typename T>
+std::stack<minmax::min_max_heap<sort_item<T>>> getTopStackBuckets(const std::vector<T> &array) {
 
     robin_hood::unordered_map<T, int> countMap;
 
@@ -223,9 +258,7 @@ void bb_sort(const std::vector<T>& array, std::vector<T>& outArray){
     sort_item minSortEl = items[countMap[minEl]];
     sort_item maxSortEl = items[countMap[maxEl]];
 
-    std::stack<minmax::MinMaxHeap<sort_item<T>>> topBucketsStack = prepareTopBuckets(items, minSortEl, maxSortEl);
-
-    bbSortToStream<T>(topBucketsStack, outArray);
+    return prepareTopBuckets(items, minSortEl, maxSortEl);
 }
 
 #endif

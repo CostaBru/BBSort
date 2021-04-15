@@ -1,13 +1,13 @@
 /**
- * @file MinMaxHeap.hpp
+ * @file min_max_heap.hpp
  * @author John Sullivan (jsull003 at ucr.edu)
  * @date December 28, 2010
  *
- * @brief Definition and implementation for class @ref MinMaxHeap.
+ * @brief Definition and implementation for class @ref min_max_heap.
  *
  * @see Paper Introducing the Min-Max Heap (http://www.cs.otago.ac.nz/staffpriv/mike/Papers/MinMaxHeaps/MinMaxHeaps.pdf)
- * @see Alternative Implementation (http://www.coldbrains.com/code/code/C++/Data_Structures/Min-Max_Heap/MinMaxHeap.C.html,
- *                                  http://www.coldbrains.com/code/code/C++/Data_Structures/Min-Max_Heap/MinMaxHeap.H.html)
+ * @see Alternative Implementation (http://www.coldbrains.com/code/code/C++/Data_Structures/Min-Max_Heap/min_max_heap.C.html,
+ *                                  http://www.coldbrains.com/code/code/C++/Data_Structures/Min-Max_Heap/min_max_heap.H.html)
  **/
 
 #pragma once
@@ -18,35 +18,23 @@
 
 namespace minmax
 {
-
-    template<typename T>
-    struct Iterator {
-        T* p;
-        T& operator*() { return *p; }
-        bool operator != (const Iterator& rhs) {
-            return p != rhs.p;
-        }
-        void operator ++() { ++p; }
-    };
+    const int tab32[32] = {
+            0,  9,  1, 10, 13, 21,  2, 29,
+            11, 14, 16, 18, 22, 25,  3, 30,
+            8, 12, 20, 28, 15, 17, 24,  7,
+            19, 27, 23,  6, 26,  5,  4, 31};
 
 /**
  * @brief Returns the log base 2 of a number @b zvalue.
  **/
-    inline unsigned int log2(unsigned int zvalue)
+    inline unsigned int log2(unsigned int value)
     {
-        // log2(0) is undefined so error
-        if (zvalue == 0) throw std::domain_error("Log base 2 of 0 is undefined.");
-
-        unsigned int result = 0;
-
-        // Loop until zvalue equals 0
-        while (zvalue)
-        {
-            zvalue >>= 1;
-            ++result;
-        }
-
-        return result - 1;
+        value |= value >> 1;
+        value |= value >> 2;
+        value |= value >> 4;
+        value |= value >> 8;
+        value |= value >> 16;
+        return tab32[(uint32_t)(value*0x07C4ACDD) >> 27];
     }
 
 /**
@@ -59,7 +47,7 @@ namespace minmax
  *                   determine the ordering of the heap.
  **/
     template<class T, class Container = std::vector<T>, class Compare = std::less<T> >
-    class MinMaxHeap // Root is on Max level
+    class min_max_heap // Root is on Max level
     {
         /**
          * @brief The container that is used to store the heap.
@@ -337,9 +325,9 @@ namespace minmax
         }
 
     public:
-        MinMaxHeap() { }
+        min_max_heap() { }
 
-        MinMaxHeap(Container zcontainer, Compare zcompare = Compare())
+        min_max_heap(Container zcontainer, Compare zcompare = Compare())
                 : heap_(zcontainer), compare_(zcompare) { }
 
         /**
@@ -360,11 +348,11 @@ namespace minmax
 
 
 
-        T* begin(MinMaxHeap& x){ return x.heap_.begin(); }
-        T* end(MinMaxHeap& x){ return x.heap_.end(); }
+        T* begin(min_max_heap& x){ return x.heap_.begin(); }
+        T* end(min_max_heap& x){ return x.heap_.end(); }
 
-        T* cbegin(MinMaxHeap& x){ return x.heap_.cbegin(); }
-        T* cend(MinMaxHeap& x){ return x.heap_.cend(); }
+        T* cbegin(min_max_heap& x){ return x.heap_.cbegin(); }
+        T* cend(min_max_heap& x){ return x.heap_.cend(); }
 
         auto begin() const { // const version
             return heap_.begin();
@@ -392,11 +380,6 @@ namespace minmax
          **/
         const T & findMax() const
         {
-            // If the heap is empty throw an error
-            if (empty())
-                throw std::underflow_error("No max element exists because there "
-                                           "are no elements in the heap.");
-
             return heap_[0];
         }
 
