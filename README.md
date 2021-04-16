@@ -110,22 +110,52 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
 
 # Performance 
 
-C++20 implementation of BB sort was compared to QSort rand algorithm taken from the Rosettacode code base web site.
+C++20 implementation of BB sort was compared to QSort rand algorithm taken from the Rosettacode code base website.
 
-BB sort shows the better performance starting N > 10 million.
+Minor optimizations added to algorithm:
+- MinMax heap used as bucket storage.
+- Instead of generation N buckets we create N/2.
 
-N: 1 000 000, CPU: AMD Ryzen 7 4800H, RAM: 64.0 GB, --O3
+Having that, BB sort shows the better performance starting N > 10 million.
+
+<details>
+		<summary> Performance comparison tables </summary>
+
+``N``: 100 000, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
+
+``uint8:``
+
+| case |    N  |    qsort (ns) |   bb sort (ns )   |
+|------|-------|---------------|------------------|
+|   1  | 1     |      2 000 100 |     1 005 000     |
+|   2  | 10    |    10  198 300 |   10  007 800     |
+|   3  | 100   |   170  365 800 |  133  798 500     |
+|   4  | 1000  |  1 727  540 500 | 1 331  475 000     |
+|   5  | 20000  | 32 975 382 500 | 26 625 005 800    |
+
+``long:``
 
 | case |    N  |    qsort (ns) |   bb sort (ns )|
 |------|-------|---------------|------------------|
-|   1  | 1.2   |      68722100 |    121708200     |
-|   2  | 10.2  |    5 23862600 |   4 12538400     |
-|   3  | 100   |   51 34720600 |  34 66300900     |
-|   4  | 2 000 |  987 25611300 | 647 94530500     |
+|   1  | 1     |     11 002 500 |    59 367600     |
+|   2  | 10    |     66 012 300 |    99 028900     |
+|   3  | 100   |    524 117 900 |   385 087200     |
+|   4  | 1000  |   5 092 121 800 |  3 051 038 300     |
+|   5  | 20000  | 100 116 390 900 | 60 191 307 100    |
 
-To make more fast, we can consider following ideas:
-- re-using container of buckets by using poolable vector data structure.
-- using min\max heap. 
+``double:``
+
+| case |    N  |    qsort (ns) |   bb sort (ns )|
+|------|-------|---------------|------------------|
+|   1  | 1     |    14 016 300 |      77 567 800     |
+|   2  | 10    |    84 019 200 |     255 961 100     |
+|   3  | 100   |   6 78 025 400 |    10 1873 800     |
+|   4  | 1000  |  65 38 606 100 |    8 978 723 200     |
+|   5  | 20000  | 131 266 887 200 | 184 922 020 300    |
+
+</details>
+
+From observation of result, I can conclude that the main bottleneck of new algorithm is memory allocator. According to previous statement, we can consider using poolable vector data structure.
 
 # Advantages
 
