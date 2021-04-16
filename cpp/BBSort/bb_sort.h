@@ -90,7 +90,7 @@ std::vector<minmax::min_max_heap<sort_item<T>>> getBuckets(const minmax::min_max
     float minLog = getLog(minEl.value);
     float maxLog = getLog(maxEl.value);
 
-    int count = iterable.size();
+    int count = (iterable.size() / 2) + 1;
 
     std::tuple<float, float> params = GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
@@ -140,7 +140,7 @@ int case2(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& ou
 }
 
 template <typename T>
-int case3(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& output, minmax::min_max_heap<sort_item<T>>& bucket, int index) {
+int caseN(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& output, minmax::min_max_heap<sort_item<T>>& bucket, int index) {
     auto newBuckets = getBuckets<T>(bucket);
     for (int i = newBuckets.size() - 1; i >= 0; --i) {
         auto nb = newBuckets[i];
@@ -151,11 +151,11 @@ int case3(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& ou
 
 template<typename Func>
 struct func_array {
-    static Func *const jumpTable[];
+    static Func *const switchCase[];
 };
 
 template<typename Func>
-Func *const func_array<Func>::jumpTable[] = { case0, case1, case2, case3 };
+Func *const func_array<Func>::switchCase[] = {case0, case1, case2, caseN };
 
 template <typename T>
 void bbSortToStream(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vector<T>& output) {
@@ -168,10 +168,10 @@ void bbSortToStream(std::stack<minmax::min_max_heap<sort_item<T>>>& st, std::vec
 
         auto caseIndex = std::min(bucket.size(), 3U);
 
-        auto jumpFunc = func_array<int(std::stack<minmax::min_max_heap<sort_item<T>>> &, std::vector<T> &,
-        minmax::min_max_heap<sort_item<T>> &, int)>::jumpTable[caseIndex];
+        auto switchCaseFunc = func_array<int(std::stack<minmax::min_max_heap<sort_item<T>>> &, std::vector<T> &,
+                                             minmax::min_max_heap<sort_item<T>> &, int)>::switchCase[caseIndex];
 
-        index += jumpFunc(st, output, bucket, index);
+        index += switchCaseFunc(st, output, bucket, index);
     }
 }
 
@@ -181,7 +181,7 @@ std::stack<minmax::min_max_heap<sort_item<T>>> prepareTopBuckets(const std::vect
     float minLog = getLog(minSortEl.value);
     float maxLog = getLog(maxSortEl.value);
 
-    int count = items.size();
+    int count = (items.size() / 2) + 1;
 
     std::tuple<float, float> params = GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
@@ -227,9 +227,9 @@ std::stack<minmax::min_max_heap<sort_item<T>>> getTopStackBuckets(const std::vec
     T minEl = array[0];
     T maxEl = array[0];
 
-    std::vector<sort_item<T>> items;
+    std::vector<sort_item<T>> distinctItems;
 
-    items.reserve(array.size());
+    distinctItems.reserve(array.size());
 
     for (int i = 0; i < array.size(); ++i) {
 
@@ -246,19 +246,19 @@ std::stack<minmax::min_max_heap<sort_item<T>>> getTopStackBuckets(const std::vec
             }
 
             sort_item<T> sortItem(item);
-            items.push_back(sortItem);
+            distinctItems.push_back(sortItem);
 
-            countMap[item] = items.size() - 1;
+            countMap[item] = distinctItems.size() - 1;
         }
         else{
-            items[countMap[item]].count += 1;
+            distinctItems[countMap[item]].count += 1;
         }
     }
 
-    sort_item minSortEl = items[countMap[minEl]];
-    sort_item maxSortEl = items[countMap[maxEl]];
+    sort_item minSortEl = distinctItems[countMap[minEl]];
+    sort_item maxSortEl = distinctItems[countMap[maxEl]];
 
-    return prepareTopBuckets(items, minSortEl, maxSortEl);
+    return prepareTopBuckets(distinctItems, minSortEl, maxSortEl);
 }
 
 #endif
