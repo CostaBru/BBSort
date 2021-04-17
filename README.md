@@ -119,7 +119,7 @@ Minor optimizations added to algorithm:
 Having that, BB sort shows the better performance starting N > 10 million.
 
 <details>
-		<summary> Performance comparison tables </summary>
+		<summary> Full sort performance comparison tables </summary>
 
 ``N``: 100 000, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
 
@@ -155,7 +155,49 @@ Having that, BB sort shows the better performance starting N > 10 million.
 
 </details>
 
-From observation of result, I can conclude that the main bottleneck of new algorithm is memory allocator. According to previous statement, we can consider using poolable vector data structure.
+
+<details>
+		<summary> Get top N against full sort </summary>
+
+``N``: 100 000, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
+
+``uint8:``
+
+| case |    N  |    qsort (ns)   |   get top 1 (ns ) |  get top 100 (ns )   |
+|------|-------|-----------------|-------------------|----------------------|
+|   1  | 1     |       2 000 100 |        998 400    |      1 001 200       |
+|   2  | 10    |      15 429 700 |     15 623 700    |     15 842 100       |
+|   3  | 100   |     168 221 100 |     84 196 800    |     89 441 700       |
+|   4  | 1000  |   1 643 511 700 |    854 106 500    |    851 551 200       |
+|   5  | 20000  | 33 109 880 400 | 17 291 026 300    | 17 173 233 500       |
+
+``long:``
+
+| case |    N  |    qsort (ns)   |   get top 1 (ns ) |  get top 100 (ns )   |
+|------|-------|-----------------|-------------------|----------------------|
+|   1  | 2     |      8 025 100  |      23 003 000    |    20 228 000       |
+|   2  | 12    |      68 566 300 |      42 277 400    |    51 449 300       |
+|   3  | 100   |     528 712 900 |     199 213 800    |   183 737 500       |
+|   4  | 1000  |   5 013 204 000 |   1 648 822 800    |  1 634 947 000      |
+|   5  | 20000  | 100 182 266 100 | 32 750 932 200    | 32 081 425 500      |
+
+
+``double:``
+
+| case |    N  |    qsort (ns)    |   get top 1 (ns ) |  get top 100 (ns )   |
+|------|-------|------------------|-------------------|----------------------|
+|   1  | 1     |       19 061 300 |     30 294 500    |     31 411 300       |
+|   2  | 10    |       866 948 00 |     71 614 500    |     70 455 700       |
+|   3  | 100   |      694 641 500 |    386 856 900    |    376 480 400       |
+|   4  | 1000  |    6 622 442 300 |  3 531 102 600    |  3 528 902 500       |
+|   5  | 20000  | 131 559 809 000 | 71 188 808 600    | 69 795 337 800       |
+
+
+</details>
+
+From observation of result, I can conclude that the main bottleneck of new algorithm is memory allocator and duplicate counter. 
+
+According to previous statement, we can consider using poolable vector data structure and getting rid of map of duplicates.
 
 # Advantages
 

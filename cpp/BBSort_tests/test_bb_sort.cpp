@@ -1,6 +1,7 @@
 #include "ut.h"
 #include "qsortrand.h"
 #include <bb_sort.h>
+#include <bb_sort_get_top_n_lazy.h>
 #include <vector>
 #include <random>
 #include <chrono>
@@ -27,7 +28,7 @@ void sort_and_test(std::vector<T> arr){
     std::vector<T> goldenArr(arr);
     sort(goldenArr.begin(), goldenArr.end());
 
-    bb_sort(arrCopy);
+    bb_sort::sort(arrCopy);
 
     test_arrays<T>(arrCopy, goldenArr);
 }
@@ -128,7 +129,7 @@ std::vector<T> sample(std::vector<T> population, long long count){
 template <typename T>
 void test_reports(){
 
-    std::cout << "test_reports" << std::endl;
+    std::cout << "test_reports " << typeid(T).name() << std::endl;
 
     std::vector<std::vector<T>> tests;
 
@@ -136,6 +137,8 @@ void test_reports(){
 
         srand(i);
 
+        tests.push_back(sample(range<T>(-100000, 100000), 1000));
+        tests.push_back(sample(range<T>(-100000, 100000), 10000));
         tests.push_back(sample(range<T>(-100000, 100000), 100000));
         tests.push_back(sample(range<T>(-100000, 100000), 1000000));
         tests.push_back(sample(range<T>(-100000, 100000), 10000000));
@@ -157,6 +160,39 @@ void test_reports(){
 
             std::shuffle(test.begin(), test.end(), g);
 
+            std::vector<T> bbsortTest(test);
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                bb_sort::sort(bbsortTest);
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            int topN = 1;
+
+            std::vector<T> getSortedTest(test);
+            std::vector<T> topNSorted;
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                topNSorted = bb_sort_top_n::getTopSortedLazy(getSortedTest, topN );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "get top " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            int topN2 = 100;
+
+            std::vector<T> getSortedTest2(test);
+            std::vector<T> topNSorted2;
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                topNSorted2 = bb_sort_top_n_lazy::getTopSortedLazy(getSortedTest2, topN2 );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "get top " << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
             std::vector<T> qsortTest(test);
             {
                 const auto start = std::chrono::high_resolution_clock::now();
@@ -164,15 +200,6 @@ void test_reports(){
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
                 std::cout << "[" << "qsort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
-            }
-
-            std::vector<T> bbsortTest(test);
-            {
-                const auto start = std::chrono::high_resolution_clock::now();
-                bb_sort(bbsortTest);
-                const auto stop = std::chrono::high_resolution_clock::now();
-                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             bool good = qsortTest.size() == bbsortTest.size();
@@ -183,6 +210,17 @@ void test_reports(){
 
                 if (!eq) {
                     std::cout << "Not eq" << i << " " << qsortTest[i] << "!=" << bbsortTest[i] << std::endl;
+                }
+
+                good = eq && good;
+            }
+
+            for (int i = 0; i < topN2; ++i) {
+
+                auto eq = qsortTest[i] == topNSorted2[i];
+
+                if (!eq) {
+                    std::cout << "Top N: Not eq" << i << " " << qsortTest[i] << "!=" << topNSorted2[i] << std::endl;
                 }
 
                 good = eq && good;
@@ -215,8 +253,15 @@ int main() {
 
         test_duplicates();
 
+        test_reports<uint8_t>();
+
+        test_reports<int>();
+
         test_reports<long>();
 
+        test_reports<float>();
+
+        test_reports<double>();
     }
     catch (const std::exception &e) {
         std::cout << e.what() << std::endl;
