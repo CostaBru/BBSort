@@ -175,7 +175,7 @@ void test_reports(){
             std::vector<T> topNSorted;
             {
                 const auto start = std::chrono::high_resolution_clock::now();
-                topNSorted = bb_sort_top_n::getTopSortedLazy(getSortedTest, topN );
+                topNSorted = bb_sort_top_n_lazy::getTopSortedLazy(getSortedTest, topN );
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
                 std::cout << "[" << "get top " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
