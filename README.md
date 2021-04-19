@@ -116,12 +116,65 @@ Minor optimizations added to algorithm:
 - MinMax heap used as bucket storage.
 - Instead of generation N buckets we create N/2.
 
-Having that, BB sort shows the better performance starting N > 10 million.
+Having that, BB sort shows the better performance starting N > 10 million for testing dataset generated below. 
+
+Please note that those data sets generated have duplicates.
+
+<details>
+		<summary> Test data generation </summary>
+
+  ```cpp
+        tests.push_back(sample(range<T>(-100000, 100000), 1000));
+        tests.push_back(sample(range<T>(-100000, 100000), 10000));
+        tests.push_back(sample(range<T>(-100000, 100000), 100000));
+        tests.push_back(sample(range<T>(-100000, 100000), 1000000));
+        tests.push_back(sample(range<T>(-100000, 100000), 10000000));
+        tests.push_back(sample(range<T>(-100000, 100000), 100000000));
+        tests.push_back(sample(range<T>(-100000, 100000), 2000000000));
+ 
+//generation methods
+
+template <typename T>
+std::vector<T> range(T start, T end){
+
+    std::vector<T> t;
+    for (int i = start; i < end; ++i) {
+        t.push_back(i);
+    }
+
+    return t;
+}
+
+template <typename T>
+std::vector<T> sample(std::vector<T> population, long long count){
+
+    std::vector<T> result;
+
+    while (result.size() <= count) {
+
+        std::vector<T> sampled;
+
+        std::sample(population.begin(),
+                    population.end(),
+                    std::back_inserter(sampled),
+                    count,
+                    std::mt19937{std::random_device{}()});
+
+        for(auto i: sampled){
+            result.push_back(i);
+        }
+    }
+    return result;
+}
+  ```  
+
+
+</details>
 
 <details>
 		<summary> Full sort performance comparison tables </summary>
 
-``N``: 100 000, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
+``N``: 100 000, ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
 
 ``uint8:``
 
@@ -155,11 +208,10 @@ Having that, BB sort shows the better performance starting N > 10 million.
 
 </details>
 
-
 <details>
 		<summary> Get top N against full sort </summary>
 
-``N``: 100 000, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
+``N``: 100 000, ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
 
 ``uint8:``
 
@@ -195,9 +247,9 @@ Having that, BB sort shows the better performance starting N > 10 million.
 
 </details>
 
-From observation of result, I can conclude that the main bottleneck of new algorithm is memory allocator and duplicate counter. 
+From observation of result, I can conclude that the main bottleneck of new algorithm is space requirements. NLogN memory allocation is very expensive operation, and it the reason of the worst performance of current implementation.
 
-According to previous statement, we can consider using poolable vector data structure and getting rid of map of duplicates.
+According to previous statement, we can consider reusable poolable vector data structure to make that aglorithm more practical.
 
 # Advantages
 
