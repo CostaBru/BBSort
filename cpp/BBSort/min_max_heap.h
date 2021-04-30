@@ -49,6 +49,9 @@ namespace minmax
     template<class T, class Container = std::vector<T>, class Compare = std::less<T> >
     class min_max_heap // Root is on Max level
     {
+        //min_max_heap(const min_max_heap& that) = delete;
+        //min_max_heap& operator=(const min_max_heap& that) = delete;
+
         /**
          * @brief The container that is used to store the heap.
          **/
@@ -392,6 +395,42 @@ namespace minmax
         {
             // findMinIndex() will throgh an underflow_error if no min exists
             return heap_[findMinIndex()];
+        }
+
+        const T & findMid() const
+        {
+            // There are four cases
+            switch (heap_.size())
+            {
+                case 0:
+                    // The heap is empty so throw an error
+                    throw std::underflow_error("No min element exists because "
+                                               "there are no elements in the "
+                                               "heap.");
+                case 1:
+                    // There is only one element in the heap, return that element
+                    return 0;
+                case 2:
+                    // There are two elements in the heap, the child must be the min
+                    return 1;
+                default:
+                    /* There are three or more elements in the heap, return the
+                     * smallest child */
+                    return compare_(heap_[1], heap_[2]) ? 2 : 1;
+            }
+        }
+
+        const std::tuple<unsigned int, unsigned int, unsigned int> getMaxMidMin() const
+        {
+            if(compare_(heap_[1], heap_[2])){
+                return std::make_tuple(0, 2, 1);
+            }
+            return std::make_tuple(0, 1, 2);
+        }
+
+        const T & At(unsigned int index) const
+        {
+            return heap_[index];
         }
 
         /**
