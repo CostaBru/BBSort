@@ -1,12 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Flexols.Data.Collections;
 
 
 namespace BBsort
 {
+    public static class LogHelper
+    {
+
+        [StructLayout(LayoutKind.Explicit)]
+        private struct ConverterStruct
+        {
+            [FieldOffset(0)] public int x;
+            [FieldOffset(0)] public float val;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float fastLog2(float val)
+        {
+            ConverterStruct u;
+            u.x = 0; u.val = val;
+
+            float lg2 = (float)(((u.x >> 23) & 255) - 128);
+            u.x &= ~(255 << 23);
+            u.x += 127 << 23;
+            return lg2 + ((-0.3358287811f) * u.val + 2.0f) * u.val - 0.65871759316667f;
+        }
+    }
+
+
     public class BBSort<T>
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static float getLog(float x)
         {
 
@@ -15,31 +43,34 @@ namespace BBsort
             {
                 return x;
             }
-            var lg = Math.Log2(abs);
+            var lg = LogHelper.fastLog2(abs);
             return (float)(x < 0 ? -lg : lg);
         }
 
         Func<T, float> m_getLog;
+
         public BBSort(Func<T, float> getLog)
         {
             m_getLog = getLog;
         }
 
-        public void Sort(HybridList<T> array)
+        public void Sort(T[] array)
         {
 
-            if (array.Count <= 1)
+            if (array.Length <= 1)
             {
                 return;
             }
 
             var st = new Stack<MinMaxHeap<T>>();
-            var countMap = new HybridDict<T, int>();
+            var countMap = new Dictionary<T, int>();
 
             getTopStackBuckets(array, st, countMap);
 
-            bbSortToStream(st, array, array.Count, countMap);
+            bbSortToStream(st, array, array.Length, countMap);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         (float, float) GetLinearTransformParams(float x1, float x2, float y1, float y2)
         {
@@ -56,7 +87,7 @@ namespace BBsort
             return (0.0f, 0.0f);
         }
 
-        void getBuckets(T min, T max, IEnumerable<T> iterable, HybridList<MinMaxHeap<T>> buckets, int count)
+        void getBuckets(ref T min, ref T max, MinMaxHeap<T> iterable, PoolList<MinMaxHeap<T>> buckets, int count)
         {
             var minLog = m_getLog(min);
             var maxLog = m_getLog(max);
@@ -72,20 +103,21 @@ namespace BBsort
 
                 if (bucket == null)
                 {
-                    buckets[index] = bucket = new MinMaxHeap<T>(new HybridList<T>());
+                    buckets[index] = bucket = new MinMaxHeap<T>(new PoolList<T>(4, 4));
                 }
                 bucket.Add(item);
             }
         }
 
-        void fillStream(T val, HybridList<T> output, int index, int count)
-        {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
+        void fillStream(ref T val, T[] output, int index, int count)
+        {
             for (int i = 0; i < count; ++i)
             {
 
                 int newIndex = index + i;
-                if (newIndex >= output.Count)
+                if (newIndex >= output.Length)
                 {
                     break;
                 }
@@ -95,56 +127,47 @@ namespace BBsort
 
         int case1(Stack<MinMaxHeap<T>> st,
                   MinMaxHeap<T> top,
-                  HybridList<T> output,
-                  HybridDict<T, int> countMap,
+                  T[] output,
+                  Dictionary<T, int> countMap,
                   int index)
         {
-            var val = top.At(0);
-
-            fillStream(val, output, index, countMap[val]);
+            fillStream(ref top.At(0), output, index, countMap[top.At(0)]);
 
             return top.Count;
         }
 
         int case2(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      HybridList<T> output,
-                      HybridDict<T, int> countMap,
+                      T[] output,
+                      Dictionary<T, int> countMap,
                       int index)
         {
-            var val0 = top.At(1);
-            var val1 = top.At(0);
+            var count0 = countMap[top.At(1)];
+            var count1 = countMap[top.At(0)];
 
-            var count0 = countMap[val0];
-            var count1 = countMap[val1];
-
-            fillStream(val0, output, index, count0);
-            fillStream(val1, output, index + count0, count1);
+            fillStream(ref top.At(1), output, index, count0);
+            fillStream(ref top.At(0), output, index + count0, count1);
 
             return count0 + count1;
         }
 
         int case3(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      HybridList<T> output,
-                      HybridDict<T, int> countMap,
+                      T[] output,
+                      Dictionary<T, int> countMap,
                       int index)
         {
 
             //single comparison
             var (maxIndex, midIndex, minIndex) = top.GetMaxMidMin();
 
-            var min = top.At(minIndex);
-            var mid = top.At(midIndex);
-            var max = top.At(maxIndex);
+            var count1 = countMap[top.At(minIndex)];
+            var count2 = countMap[top.At(midIndex)];
+            var count3 = countMap[top.At(maxIndex)];
 
-            var count1 = countMap[min];
-            var count2 = countMap[mid];
-            var count3 = countMap[max];
-
-            fillStream(min, output, index, count1);
-            fillStream(mid, output, index + count1, count2);
-            fillStream(max, output, index + count1 + count2, count3);
+            fillStream(ref top.At(minIndex), output, index, count1);
+            fillStream(ref top.At(midIndex), output, index + count1, count2);
+            fillStream(ref top.At(maxIndex), output, index + count1 + count2, count3);
 
             var count = count1 + count2 + count3;
 
@@ -153,18 +176,16 @@ namespace BBsort
 
         int caseN(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      HybridList<T> output,
-                      HybridDict<T, int> countMap,
+                      T[] output,
+                      Dictionary<T, int> countMap,
                       int index)
         {
 
             var count = (top.Count / 2) + 1;
 
-            var newBuckets = new HybridList<MinMaxHeap<T>>(count);
+            var newBuckets = new PoolList<MinMaxHeap<T>>(count, count, count);
 
-            newBuckets.Ensure(count);
-
-            getBuckets(top.FindMin(), top.FindMax(), top, newBuckets, count);
+            getBuckets(ref top.FindMin(), ref top.FindMax(), top, newBuckets, count);
 
             for (int i = newBuckets.Count - 1; i >= 0; --i)
             {
@@ -176,9 +197,9 @@ namespace BBsort
             return 0;
         }
 
-        void bbSortToStream(Stack<MinMaxHeap<T>> st, HybridList<T> output, int count, HybridDict<T, int> countMap)
+        void bbSortToStream(Stack<MinMaxHeap<T>> st, T[] output, int count, Dictionary<T, int> countMap)
         {
-            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>, HybridList<T>, HybridDict<T, int>, int, int>[] { case1, case2, case3, caseN };
+            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>, T[], Dictionary<T, int>, int, int>[] { case1, case2, case3, caseN };
 
             int index = 0;
 
@@ -191,12 +212,12 @@ namespace BBsort
             }
         }
 
-        void getTopStackBuckets(HybridList<T> array,
+        void getTopStackBuckets(T[] array,
                                 Stack<MinMaxHeap<T>> st,
-                                HybridDict<T, int> countMap)
+                                Dictionary<T, int> countMap)
         {
 
-            MinMaxHeap<T> distinctItems = new MinMaxHeap<T>(new HybridList<T>());
+            MinMaxHeap<T> distinctItems = new MinMaxHeap<T>(new PoolList<T>(array.Length, array.Length));
 
             foreach (var item in array)
             {

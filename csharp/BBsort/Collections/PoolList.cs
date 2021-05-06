@@ -12,7 +12,7 @@ namespace Flexols.Data.Collections
         {
         }
 
-        public PoolList(int maxCapacity, int arraySize, T item) : base(maxCapacity, arraySize, item)
+        public PoolList(int maxCapacity, int arraySize, int size) : base(maxCapacity, arraySize, size)
         {
         }
 

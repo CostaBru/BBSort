@@ -27,10 +27,10 @@ namespace Flexols.Data.Collections
             return tab32[(uint)(value * 0x07C4ACDD) >> 27];
         }
 
-        private readonly HybridList<T> heap_;
+        private readonly PoolList<T> heap_;
         private readonly IComparer<T> comparer_;
 
-        public MinMaxHeap(HybridList<T> zcontainer, IComparer<T> zcompare = null)
+        public MinMaxHeap(PoolList<T> zcontainer, IComparer<T> zcompare = null)
         {
             heap_ = zcontainer;
             comparer_ = zcompare ?? Comparer<T>.Default;

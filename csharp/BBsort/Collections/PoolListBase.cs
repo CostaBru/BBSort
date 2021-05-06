@@ -39,10 +39,10 @@ namespace Flexols.Data.Collections
             Array.Clear(m_items, 0, m_items.Length);
         }
 
-        public PoolListBase(int maxCapacity, int arraySize, T item)
+        public PoolListBase(int maxCapacity, int arraySize, int size)
           : this(maxCapacity, arraySize)
         {
-            AddItem(item);
+            m_size = size;
         }
 
         public PoolListBase(PoolListBase<T> poolList)
@@ -88,7 +88,7 @@ namespace Flexols.Data.Collections
                     Array.Copy(m_items, 0, vals, 0, m_size);
                 }
 
-                ArrayPool<T>.Shared.Return(m_items, clearArray: true);
+                ArrayPool<T>.Shared.Return(m_items, clearArray: false);
 
                 m_items = vals;
             }
@@ -102,7 +102,7 @@ namespace Flexols.Data.Collections
         {
             if (m_items != null)
             {
-                ArrayPool<T>.Shared.Return(m_items, clearArray: true);
+                ArrayPool<T>.Shared.Return(m_items, clearArray: false);
             }
 
             if (m_size > 0)
@@ -163,7 +163,7 @@ namespace Flexols.Data.Collections
                     Array.Copy(m_items, 0, vals, 0, m_size);
                 }
 
-                ArrayPool<T>.Shared.Return(m_items, clearArray: true);
+                ArrayPool<T>.Shared.Return(m_items, clearArray: false);
 
                 m_items = vals;
             }
@@ -229,6 +229,11 @@ namespace Flexols.Data.Collections
             {
                 yield return m_items[index];
             }
+        }
+
+        public ref T ValueByRef(int index)
+        {
+            return ref m_items[index];
         }
 
         IEnumerator IEnumerable.GetEnumerator()

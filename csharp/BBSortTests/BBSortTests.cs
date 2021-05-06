@@ -1,10 +1,12 @@
 using Flexols.Data.Collections;
 using NUnit.Framework;
+using System;
 
 namespace BBSortTests
 {
     public class Tests
-    {
+    {       
+
         [SetUp]
         public void Setup()
         {
@@ -15,12 +17,12 @@ namespace BBSortTests
             System.Console.WriteLine(message);
         }
 
-        public void test_arrays<T>(HybridList<T> bb_rez, HybridList<T> goldenArr)
+        public void test_arrays<T>(T[] bb_rez, T[] goldenArr)
         {
 
-            Assert.AreEqual(goldenArr.Count, bb_rez.Count, "sizes not equal");
+            Assert.AreEqual(goldenArr.Length, bb_rez.Length, "sizes not equal");
 
-            for (int i = 0; i < goldenArr.Count; ++i)
+            for (int i = 0; i < goldenArr.Length; ++i)
             {
                 Assert.AreEqual(goldenArr[i], bb_rez[i], "Not equal at: " + i);
             }
@@ -31,14 +33,19 @@ namespace BBSortTests
             var arrCopy = new HybridList<float>(arr);
             arrCopy.Reverse();
 
-            var goldenArr = new HybridList<float>(arr);
-            goldenArr.Sort();
+            var goldenArr = new float[arr.Count];
+            arr.CopyTo(goldenArr, 0);
+
+            Array.Sort<float>(goldenArr);
 
             var bbSort = new BBsort.BBSort<float>(BBsort.BBSort<float>.getLog);
 
-            bbSort.Sort(arrCopy);
+            var bbSortTest = new float[arr.Count];
+            arrCopy.CopyTo(bbSortTest, 0);
 
-            test_arrays(arrCopy, goldenArr);
+            bbSort.Sort(bbSortTest);
+
+            test_arrays(bbSortTest, goldenArr);
         }
 
         [Test]
