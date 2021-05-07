@@ -53,7 +53,7 @@ void test_bucket_worst_2() {
     for (int i = 0; i < 15; ++i) {
 
         for (auto const val : arrt) {
-            bucket_worse_arr.push_back(val * cluster);
+            bucket_worse_arr.emplace_back(val * cluster);
             cluster *= 10.0;
         }
     }
@@ -98,7 +98,7 @@ std::vector<T> range(T start, T end){
 
     std::vector<T> t;
     for (int i = start; i < end; ++i) {
-        t.push_back(i);
+        t.emplace_back(i);
     }
 
     return t;
@@ -110,7 +110,7 @@ std::vector<T> rangeN(T start, T end, int n){
     std::vector<T> t;
 
     for (int i = start; i < end && i <= n; ++i) {
-        t.push_back(i);
+        t.emplace_back(i);
     }
 
     return t;
@@ -132,7 +132,7 @@ std::vector<T> sample(std::vector<T> population, long long count){
                     std::mt19937{std::random_device{}()});
 
         for(auto i: sampled){
-            result.push_back(i);
+            result.emplace_back(i);
         }
     }
     return result;
@@ -149,13 +149,13 @@ void test_duplicate_reports(){
 
         srand(i);
 
-        tests.push_back(sample(range<T>(-100000, 100000), 1000));
-        tests.push_back(sample(range<T>(-100000, 100000), 10000));
-        tests.push_back(sample(range<T>(-100000, 100000), 100000));
-        tests.push_back(sample(range<T>(-100000, 100000), 1000000));
-        tests.push_back(sample(range<T>(-100000, 100000), 10000000));
-        tests.push_back(sample(range<T>(-100000, 100000), 100000000));
-        tests.push_back(sample(range<T>(-100000, 100000), 2000000000));
+        tests.emplace_back(sample(range<T>(-100000, 100000), 1000));
+        tests.emplace_back(sample(range<T>(-100000, 100000), 10000));
+        tests.emplace_back(sample(range<T>(-100000, 100000), 100000));
+        tests.emplace_back(sample(range<T>(-100000, 100000), 1000000));
+        tests.emplace_back(sample(range<T>(-100000, 100000), 10000000));
+        tests.emplace_back(sample(range<T>(-100000, 100000), 100000000));
+        tests.emplace_back(sample(range<T>(-100000, 100000), 2000000000));
     }
 
     for(int i = 0; i < 2; ++i) {
@@ -259,11 +259,11 @@ void test_unique_reports(){
 
     for(int i = 0; i < 1; ++i) {
 
-        tests.push_back(rangeN<T>(-100000, 100000, 100));
-        tests.push_back(rangeN<T>(-100000, 100000, 1000));
-        tests.push_back(rangeN<T>(-100000, 100000, 10000));
-        tests.push_back(rangeN<T>(-100000, 100000, 100000));
-        tests.push_back(rangeN<T>(-1000000, 1000000, 1000000));
+        tests.emplace_back(rangeN<T>(-100000, 100000, 100));
+        tests.emplace_back(rangeN<T>(-100000, 100000, 1000));
+        tests.emplace_back(rangeN<T>(-100000, 100000, 10000));
+        tests.emplace_back(rangeN<T>(-100000, 100000, 100000));
+        tests.emplace_back(rangeN<T>(-1000000, 1000000, 1000000));
     }
 
     for(int i = 0; i < 2; ++i) {

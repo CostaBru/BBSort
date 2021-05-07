@@ -370,7 +370,7 @@ namespace minmax
         void push(const T & zvalue)
         {
             // Push the value onto the end of the heap
-            heap_.push_back(zvalue);
+            heap_.emplace_back(zvalue);
 
             // Reorder the heap so that the min-max heap property holds true
             trickleUp(heap_.size() - 1);

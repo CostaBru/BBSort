@@ -302,7 +302,7 @@ namespace bb_sort {
                 distinctItems[distinctMap[item]].count += 1;
             } else {
                 sort_item<T> sortItem(item);
-                distinctItems.push_back(sortItem);
+                distinctItems.emplace_back(sortItem);
                 distinctMap[item] = distinctItems.size() - 1;
             }
         }
