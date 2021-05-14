@@ -2,7 +2,7 @@
 
 In honor of Aleksey Navalny's ``Blue Boxers`` Case.
 
-Python3 implementation of stable hybrid of non comparison counting and bucket sorting algorithm that works using ``O(N)`` time even for non uniformly distributed numbers.
+Python3\C++\C# implementation of stable hybrid of non comparison counting and bucket sorting algorithm that works using ``O(N)`` time even for non uniformly distributed numbers.
 
 Was developed on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation was published. 
 
@@ -107,6 +107,12 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
    ```  
 	
 </details>
+
+# Min max heap advantage
+
+We can use min max heap data structure to get rid of counting duplicates on first step. It takes O ``N`` to build the min max heap. 
+
+To recognize that bucket is full of duplicates, we can compare the min and max values of the heap. Those values we take to build the linear transform parameters as well. 
 
 # Performance 
 
@@ -251,7 +257,7 @@ From observation of result, I can conclude that the main bottleneck of new algor
 
 According to previous statement, we can consider reusable poolable vector data structure to make that algorithm more practical. 
 
-C# ``BB sort`` poolable implementation (No counting map) has ``~20% better`` full sort runtime performance than quicksort hybrid algorithm implementation taken from rosseta codebase. Please note that it was slightly modified to work with list.
+C# ``BB sort`` poolable implementation (No counting map) has ``~20% better`` full sort runtime performance than quicksort hybrid algorithm implementation taken from the Rosseta codebase. Please note that it was slightly modified to work with list.
 
 # Advantages
 
