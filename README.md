@@ -249,7 +249,9 @@ std::vector<T> sample(std::vector<T> population, long long count){
 
 From observation of result, I can conclude that the main bottleneck of new algorithm is space requirements. NLogN memory allocation is very expensive operation, and it the reason of the worst performance of current implementation.
 
-According to previous statement, we can consider reusable poolable vector data structure to make that aglorithm more practical.
+According to previous statement, we can consider reusable poolable vector data structure to make that algorithm more practical. 
+
+C# ``BB sort`` poolable implementation (No counting map) has ``~20% better`` full sort runtime performance than quicksort hybrid algorithm implementation taken from rosseta codebase. Please note that it was slightly modified to work with list.
 
 # Advantages
 
