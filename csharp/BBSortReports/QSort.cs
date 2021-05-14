@@ -5,6 +5,9 @@
 //
 #define Tripartite
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace RosettaCode
 {
     using System;
@@ -19,7 +22,7 @@ namespace RosettaCode
 
         #region Properties
         public UInt32 InsertionLimit { get; }
-        private T[] Samples { get; }
+        private List<T> Samples { get; }
         private Int32 Left { get; set; }
         private Int32 Right { get; set; }
         private Int32 LeftMedian { get; set; }
@@ -30,22 +33,23 @@ namespace RosettaCode
         public QuickSort(UInt32 insertionLimit = INSERTION_LIMIT_DEFAULT)
         {
             this.InsertionLimit = insertionLimit;
-            this.Samples = new T[SAMPLES_MAX];
+            this.Samples = new List<T>(SAMPLES_MAX);
+            this.Samples.InsertRange(0, Enumerable.Repeat(default(T),SAMPLES_MAX));
         }
         #endregion
 
         #region Sort Methods
-        public void Sort(T[] entries)
+        public void Sort(List<T> entries)
         {
-            Sort(entries, 0, entries.Length - 1);
+            Sort(entries, 0, entries.Count - 1);
         }
 
-        public void Sort(T[] entries, Int32 first, Int32 last)
+        public void Sort(List<T> entries, Int32 first, Int32 last)
         {
-            var length = last + 1 - first;
-            while (length > 1)
+            var Count = last + 1 - first;
+            while (Count > 1)
             {
-                if (length < InsertionLimit)
+                if (Count < InsertionLimit)
                 {
                     InsertionSort<T>.Sort(entries, first, last);
                     return;
@@ -57,47 +61,47 @@ namespace RosettaCode
                 partition(median, entries);
                 //[Note]Right < Left
 
-                var leftLength = Right + 1 - first;
-                var rightLength = last + 1 - Left;
+                var leftCount = Right + 1 - first;
+                var rightCount = last + 1 - Left;
 
                 //
                 // First recurse over shorter partition, then loop
                 // on the longer partition to elide tail recursion.
                 //
-                if (leftLength < rightLength)
+                if (leftCount < rightCount)
                 {
                     Sort(entries, first, Right);
                     first = Left;
-                    length = rightLength;
+                    Count = rightCount;
                 }
                 else
                 {
                     Sort(entries, Left, last);
                     last = Right;
-                    length = leftLength;
+                    Count = leftCount;
                 }
             }
         }
 
         /// <summary>Return an odd sample size proportional to the log of a large interval size.</summary>
-        private static Int32 sampleSize(Int32 length, Int32 max = SAMPLES_MAX)
+        private static Int32 sampleSize(Int32 Count, Int32 max = SAMPLES_MAX)
         {
-            var logLen = (Int32)Math.Log10(length);
+            var logLen = (Int32)Math.Log10(Count);
             var samples = Math.Min(2 * logLen + 1, max);
-            return Math.Min(samples, length);
+            return Math.Min(samples, Count);
         }
 
         /// <summary>Estimate the median value of entries[Left:Right]</summary>
         /// <remarks>A sample median is used as an estimate the true median.</remarks>
-        private T pivot(T[] entries)
+        private T pivot(List<T> entries)
         {
-            var length = Right + 1 - Left;
-            var samples = sampleSize(length);
+            var Count = Right + 1 - Left;
+            var samples = sampleSize(Count);
             // Sample Linearly:
             for (var sample = 0; sample < samples; sample++)
             {
                 // Guard against Arithmetic Overflow:
-                var index = (Int64)length * sample / samples + Left;
+                var index = (int)Count * sample / samples + Left;
                 Samples[sample] = entries[index];
             }
 
@@ -105,7 +109,7 @@ namespace RosettaCode
             return Samples[samples / 2];
         }
 
-        private void partition(T median, T[] entries)
+        private void partition(T median, List<T> entries)
         {
             var first = Left;
             var last = Right;
@@ -146,14 +150,14 @@ namespace RosettaCode
 
         #region Swap Methods
         [Conditional("Tripartite")]
-        private void swapOut(T median, T[] entries)
+        private void swapOut(T median, List<T> entries)
         {
             if (median.CompareTo(entries[Left]) == 0) Swap(entries, LeftMedian++, Left);
             if (median.CompareTo(entries[Right]) == 0) Swap(entries, Right, RightMedian--);
         }
 
         [Conditional("Tripartite")]
-        private void swapIn(T[] entries, Int32 first, Int32 last)
+        private void swapIn(List<T> entries, Int32 first, Int32 last)
         {
             // Restore Median entries
             while (first < LeftMedian) Swap(entries, first++, Right--);
@@ -161,9 +165,14 @@ namespace RosettaCode
         }
 
         /// <summary>Swap entries at the left and right indicies.</summary>
-        public void Swap(T[] entries, Int32 left, Int32 right)
+        public void Swap(List<T> entries, Int32 left, Int32 right)
         {
-            Swap(ref entries[left], ref entries[right]);
+            var en1 = entries[left];
+            var en2 = entries[right];
+            Swap(ref en1, ref en2);
+
+            entries[left] = en1;
+            entries[right] = en2;
         }
 
         /// <summary>Swap two entities of type T.</summary>
@@ -179,14 +188,14 @@ namespace RosettaCode
     #region Insertion Sort
     static class InsertionSort<T> where T : IComparable
     {
-        public static void Sort(T[] entries, Int32 first, Int32 last)
+        public static void Sort(List<T> entries, Int32 first, Int32 last)
         {
             for (var next = first + 1; next <= last; next++)
                 insert(entries, first, next);
         }
 
         /// <summary>Bubble next entry up to its sorted location, assuming entries[first:next - 1] are already sorted.</summary>
-        private static void insert(T[] entries, Int32 first, Int32 next)
+        private static void insert(List<T> entries, Int32 first, Int32 next)
         {
             var entry = entries[next];
             while (next > first && entries[next - 1].CompareTo(entry) > 0)

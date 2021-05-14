@@ -90,16 +90,14 @@ namespace BBSortReports
                 tests.Add(sample(rangeN<T>(-100000, 100000), 1000000));
                 tests.Add(sample(rangeN<T>(-100000, 100000), 10000000));
                 tests.Add(sample(rangeN<T>(-100000, 100000), 100000000));
-                tests.Add(sample(rangeN<T>(-100000, 100000), 2000000000));
             }
 
             var rand = new Random();
 
             var clock = new System.Diagnostics.Stopwatch();
 
-            for (int i = 0; i < 2; ++i)
+            for (int i = 0; i < 3; ++i)
             {
-
                 int caseNumber = 1;
                 bool allGood = true;
 
@@ -110,32 +108,51 @@ namespace BBSortReports
 
                     Shuffle(rand, test);
 
-                    var bbsortTest = new T[test.Count];
-
-                    test.CopyTo(bbsortTest, 0);
-
+                    var bbsortDictlessTest = new List<T>(test);
 
                     {
+                        
                         clock.Reset();
 
                         clock.Start();
 
-                        var bbSort = new BBsort.BBSort<T>(getLog);
+                        var bbSort = new BBsort.DictLess.BBSort<T>(getLog);
 
-                        bbSort.Sort(bbsortTest);
+                        bbSort.Sort(bbsortDictlessTest);
 
                         clock.Stop();
 
                         var ms = clock.ElapsedMilliseconds;
+                        
 
-                        Print($"[bb_sort] {ms}ms size: {bbsortTest.Length}");
+                        Print($"[bb_sort_dictless] {ms}ms size: {bbsortDictlessTest.Count}");
                     }
-
-                    var qsortTest = new T[test.Count];
-
-                    test.CopyTo(qsortTest, 0);
+                    
+                    var bbsortCountingTest = new List<T>(test);
 
                     {
+                        
+                        
+                        clock.Reset();
+
+                        clock.Start();
+
+                        var bbSort = new BBsort.Counting.BBSort<T>(getLog);
+
+                        bbSort.Sort(bbsortCountingTest);
+
+                        clock.Stop();
+
+                        var ms = clock.ElapsedMilliseconds;
+                        
+
+                        Print($"[bb_sort_counting] {ms}ms size: {bbsortCountingTest.Count}");
+                    }
+
+                    var qsortTest = new List<T>(test);
+
+                    {
+                        
                         clock.Reset();
 
                         clock.Start();
@@ -147,20 +164,142 @@ namespace BBSortReports
                         clock.Stop();
 
                         var ms = clock.ElapsedMilliseconds;
+                        
 
-                        Print($"[qsort  ] {ms}ms size: {bbsortTest.Length}");
+                        Print($"[qsort           ] {ms}ms size: {bbsortCountingTest.Count}");
                     }
 
 
-                    bool good = qsortTest.Length == bbsortTest.Length;
+                    bool good = qsortTest.Count == bbsortCountingTest.Count;
 
-                    for (int j = 0; j < qsortTest.Length; ++j)
+                    for (int j = 0; j < qsortTest.Count; ++j)
                     {
-                        var eq = EqualityComparer<T>.Default.Equals(qsortTest[j], bbsortTest[j]);
+                        var eq = EqualityComparer<T>.Default.Equals(qsortTest[j], bbsortCountingTest[j]);
 
                         if (!eq)
                         {
-                            Print($"Not eq {j} {qsortTest[j]} != {bbsortTest[j]}");
+                            Print($"Not eq {j} {qsortTest[j]} != {bbsortCountingTest[j]}");
+                        }
+
+                        good = eq && good;
+                    }
+
+                    if (!good)
+                    {
+                        allGood = false;
+                    }
+
+                    caseNumber += 1;
+                }
+
+                if (!allGood)
+                {
+                    throw new ApplicationException("Some test failed.");
+                }
+            }
+        }
+        
+          static void test_unique_reports<T>(Func<T, float> getLog) where T : IComparable
+        {
+            Print("test_unique_reports " + typeof(T).Name);
+
+            HybridList<HybridList<T>> tests = new HybridList<HybridList<T>>();
+
+            for (int i = 0; i < 1; ++i)
+            {
+                tests.Add(rangeN<T>(-1000000, 1000000, 1000));
+                tests.Add(rangeN<T>(-1000000, 1000000, 10000));
+                tests.Add(rangeN<T>(-1000000, 1000000, 100000));
+                tests.Add(rangeN<T>(-1000000, 1000000, 1000000));
+                tests.Add(rangeN<T>(-1000000, 1000000, 10000000));
+                tests.Add(rangeN<T>(-1000000, 1000000, 100000000));
+            }
+
+            var rand = new Random();
+
+            var clock = new System.Diagnostics.Stopwatch();
+
+            for (int i = 0; i < 3; ++i)
+            {
+                int caseNumber = 1;
+                bool allGood = true;
+
+                foreach (var test in tests)
+                {
+                    Print(caseNumber.ToString());
+
+                    Shuffle(rand, test);
+
+                    var bbsortDictlessTest = new List<T>(test);
+
+                    {
+
+                        clock.Reset();
+
+                        clock.Start();
+
+                        var bbSort = new BBsort.DictLess.BBSort<T>(getLog);
+
+                        bbSort.Sort(bbsortDictlessTest);
+
+                        clock.Stop();
+
+                        var ms = clock.ElapsedMilliseconds;
+                        
+
+                        Print($"[bb_sort_dictless] {ms}ms size: {bbsortDictlessTest.Count}");
+                    }
+                    
+                    var bbsortCountingTest = new List<T>(test);
+
+                    {
+
+                        clock.Reset();
+
+                        clock.Start();
+
+                        var bbSort = new BBsort.Counting.BBSort<T>(getLog);
+
+                        bbSort.Sort(bbsortCountingTest);
+
+                        clock.Stop();
+
+                        var ms = clock.ElapsedMilliseconds;
+                        
+
+                        Print($"[bb_sort_counting] {ms}ms size: {bbsortCountingTest.Count}");
+                    }
+
+                    var qsortTest = new List<T>(test);
+
+                    {
+
+                        clock.Reset();
+
+                        clock.Start();
+
+                        var qs = new RosettaCode.QuickSort<T>(0);
+
+                        qs.Sort(qsortTest);
+
+                        clock.Stop();
+                        
+
+                        var ms = clock.ElapsedMilliseconds;
+
+                        Print($"[qsort           ] {ms}ms size: {bbsortCountingTest.Count}");
+                    }
+
+
+                    bool good = qsortTest.Count == bbsortCountingTest.Count;
+
+                    for (int j = 0; j < qsortTest.Count; ++j)
+                    {
+                        var eq = EqualityComparer<T>.Default.Equals(qsortTest[j], bbsortCountingTest[j]);
+
+                        if (!eq)
+                        {
+                            Print($"Not eq {j} {qsortTest[j]} != {bbsortCountingTest[j]}");
                         }
 
                         good = eq && good;
@@ -183,7 +322,11 @@ namespace BBSortReports
 
         public static void Main()
         {
-            test_duplicate_reports<float>(BBsort.BBSort<float>.getLog);
+            test_duplicate_reports<float>(BBsort.Counting.BBSort<float>.getLog);
+            test_unique_reports<float>(BBsort.Counting.BBSort<float>.getLog);
+            
+            test_duplicate_reports<int>(BBsort.Counting.BBSort<int>.getLog);
+            test_unique_reports<int>(BBsort.Counting.BBSort<int>.getLog);
         }
     }
 }

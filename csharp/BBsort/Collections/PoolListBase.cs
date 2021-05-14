@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Flexols.Data.Collections
 {
@@ -231,6 +232,7 @@ namespace Flexols.Data.Collections
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref T ValueByRef(int index)
         {
             return ref m_items[index];

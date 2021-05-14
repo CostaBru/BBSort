@@ -1,6 +1,7 @@
 using Flexols.Data.Collections;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 
 namespace BBSortTests
 {
@@ -17,10 +18,10 @@ namespace BBSortTests
             System.Console.WriteLine(message);
         }
 
-        public void test_arrays<T>(T[] bb_rez, T[] goldenArr)
+        public void test_arrays<T>(List<T> bb_rez, T[] goldenArr)
         {
 
-            Assert.AreEqual(goldenArr.Length, bb_rez.Length, "sizes not equal");
+            Assert.AreEqual(goldenArr.Length, bb_rez.Count, "sizes not equal");
 
             for (int i = 0; i < goldenArr.Length; ++i)
             {
@@ -38,10 +39,9 @@ namespace BBSortTests
 
             Array.Sort<float>(goldenArr);
 
-            var bbSort = new BBsort.BBSort<float>(BBsort.BBSort<float>.getLog);
+            var bbSort = new BBsort.Counting.BBSort<float>(BBsort.Counting.BBSort<float>.getLog);
 
-            var bbSortTest = new float[arr.Count];
-            arrCopy.CopyTo(bbSortTest, 0);
+            var bbSortTest = new List<float>(arrCopy);
 
             bbSort.Sort(bbSortTest);
 

@@ -1,64 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Flexols.Data.Collections;
 
 
-namespace BBsort.Counting
+namespace BBsort.DictLess
 {
-    public static class LogHelper
-    {
-
-        [StructLayout(LayoutKind.Explicit)]
-        private struct ConverterStruct
-        {
-            [FieldOffset(0)] public int x;
-            [FieldOffset(0)] public float val;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float fastLog2(float val)
-        {
-            ConverterStruct u;
-            u.x = 0; u.val = val;
-
-            float lg2 = (float)(((u.x >> 23) & 255) - 128);
-            u.x &= ~(255 << 23);
-            u.x += 127 << 23;
-            return lg2 + ((-0.3358287811f) * u.val + 2.0f) * u.val - 0.65871759316667f;
-        }
-    }
-
-
     public class BBSort<T>
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
-        public static float getLog(float x)
-        {
-
-            var abs = Math.Abs(x);
-            if (abs < 2)
-            {
-                return x;
-            }
-            var lg = LogHelper.fastLog2(abs);
-            return (float)(x < 0 ? -lg : lg);
-        }
-        
-        public static float getLog(int x)
-        {
-
-            var abs = Math.Abs(x);
-            if (abs < 2)
-            {
-                return x;
-            }
-            var lg = LogHelper.fastLog2(abs);
-            return (float)(x < 0 ? -lg : lg);
-        }
-
         Func<T, float> m_getLog;
 
         public BBSort(Func<T, float> getLog)
@@ -75,11 +24,10 @@ namespace BBsort.Counting
             }
 
             var st = new Stack<MinMaxHeap<T>>();
-            var countMap = new Dictionary<T, int>();
 
-            getTopStackBuckets(array, st, countMap);
+            getTopStackBuckets(array, st);
 
-            bbSortToStream(st, array, array.Count, countMap);
+            bbSortToStream(st, array, array.Count);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -119,7 +67,6 @@ namespace BBsort.Counting
                 {
                     const int maxCapacity = int.MaxValue;
                     const int arraySize = 2;
-                    
                     buckets[index] = bucket = new MinMaxHeap<T>(new PoolList<T>(maxCapacity, arraySize));
                 }
                 bucket.Add(iterable.At(i));
@@ -145,10 +92,9 @@ namespace BBsort.Counting
         int case1(Stack<MinMaxHeap<T>> st,
                   MinMaxHeap<T> top,
                   List<T> output,
-                  Dictionary<T, int> countMap,
                   int index)
         {
-            fillStream(ref top.At(0), output, index, countMap[top.At(0)]);
+            fillStream(ref top.At(0), output, index, top.Count);
 
             return top.Count;
         }
@@ -156,11 +102,10 @@ namespace BBsort.Counting
         int case2(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
                       List<T> output,
-                      Dictionary<T, int> countMap,
                       int index)
         {
-            var count0 = countMap[top.At(1)];
-            var count1 = countMap[top.At(0)];
+            var count0 = 1;
+            var count1 = 1;
 
             fillStream(ref top.At(1), output, index, count0);
             fillStream(ref top.At(0), output, index + count0, count1);
@@ -171,16 +116,15 @@ namespace BBsort.Counting
         int case3(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
                       List<T> output,
-                      Dictionary<T, int> countMap,
                       int index)
         {
 
             //single comparison
             var (maxIndex, midIndex, minIndex) = top.GetMaxMidMin();
 
-            var count1 = countMap[top.At(minIndex)];
-            var count2 = countMap[top.At(midIndex)];
-            var count3 = countMap[top.At(maxIndex)];
+            var count1 = 1;
+            var count2 = 1;
+            var count3 = 1;
 
             fillStream(ref top.At(minIndex), output, index, count1);
             fillStream(ref top.At(midIndex), output, index + count1, count2);
@@ -194,9 +138,14 @@ namespace BBsort.Counting
         int caseN(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
                       List<T> output,
-                      Dictionary<T, int> countMap,
                       int index)
         {
+            var allDuplicates = EqualityComparer<T>.Default.Equals(top.At(0), top.At(1));
+
+            if (allDuplicates)
+            {
+                return case1(st, top, output, index);
+            }
 
             var count = (top.Count / 2) + 1;
 
@@ -216,42 +165,34 @@ namespace BBsort.Counting
             return 0;
         }
 
-        void bbSortToStream(Stack<MinMaxHeap<T>> st, List<T> output, int count, Dictionary<T, int> countMap)
+        void bbSortToStream(Stack<MinMaxHeap<T>> st, List<T> output, int count)
         {
-            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>, List<T>, Dictionary<T, int>, int, int>[] { case1, case2, case3, caseN };
+            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>, List<T>, int, int>[] { case1, case2, case3, caseN };
 
             int index = 0;
 
             while (st.Count > 0 && index < count)
             {
                 var top = st.Pop();
+                
                 var caseIndex = Math.Min(top.Count - 1, 3);
 
-                index += caseFunc[caseIndex].Invoke(st, top, output, countMap, index);
+                index += caseFunc[caseIndex].Invoke(st, top, output, index);
             }
         }
 
         void getTopStackBuckets(List<T> array,
-                                Stack<MinMaxHeap<T>> st,
-                                Dictionary<T, int> countMap)
+                                Stack<MinMaxHeap<T>> st)
         {
 
-            MinMaxHeap<T> distinctItems = new MinMaxHeap<T>(new PoolList<T>(array.Count, 4));
+            MinMaxHeap<T> items = new MinMaxHeap<T>(new PoolList<T>(array.Count, 4));
 
             for (var index = 0; index < array.Count; index++)
             {
-                if (countMap.ContainsKey(array[index]))
-                {
-                    countMap[array[index]] += 1;
-                }
-                else
-                {
-                    distinctItems.Add(array[index]);
-                    countMap[array[index]] = 1;
-                }
+                items.Add(array[index]);
             }
 
-            caseN(st, distinctItems, array, countMap, 0);          
+            caseN(st, items, array, 0);          
         }
     }
 }
