@@ -4,7 +4,9 @@ In honor of Aleksey Navalny's ``Blue Boxers`` Case.
 
 Python3\C++\C# implementation of stable hybrid of non comparison counting and bucket sorting algorithm that works using ``O(N)`` time even for non uniformly distributed numbers.
 
-Was developed on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation was published. 
+C++ and C# code taking advantage of using MIN\MAX heap. C# part uses a poolable list to lower memory allocation bottleneck effect.
+
+The main idea and python code has come on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation was published. 
 
 The ``BB sort`` is very simple and uses ``5N`` operations in average. 
 
@@ -110,9 +112,63 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
 
 # Min max heap advantage
 
-We can use min max heap data structure to get rid of counting duplicates on first step. It takes O ``N`` to build the min max heap. 
+As the main requirement, we have to calculate min\max value of each input bucket to scale each value to its result bucket. We can use the min max heap as the bucket container data structure. It is known that it takes O ``N`` to build it.
 
-To recognize that bucket is full of duplicates, we can compare the min and max values of the heap. Those values we take to build the linear transform parameters as well. 
+Performance profiling result shows that counting duplicates and storing it in the map takes ~60% of execution time. We can take advantage of min\max heap here and use it to get rid of counting duplicates on the first step.  
+
+To recognize that bucket is full of duplicates, we will compare the min and max values of the heap. 
+
+Another good point of having min\max heap as bucket container: it allows us to handle bucket with 2 elements without comparing items. Bucket with 3 items requires only one comparison to get min\max and middle element.
+
+<details>
+		<summary> Duplicates handling </summary>
+  
+  ```csharp
+
+     int case1(Stack<MinMaxHeap<T>> st,
+                  MinMaxHeap<T> top,
+                  List<T> output,
+                  int index)
+        {
+            fillStream(ref top.At(0), output, index, top.Count);
+
+            return top.Count;
+        }
+
+    int caseN(Stack<MinMaxHeap<T>> st,
+                    MinMaxHeap<T> top,
+                    List<T> output,
+                    int index)
+        {
+            var allDuplicates = EqualityComparer<T>.Default.Equals(top.At(0), top.At(1));
+
+            if (allDuplicates)
+            {
+                return case1(st, top, output, index);
+            }
+
+            var count = (top.Count / 2) + 1;
+
+            var newBuckets = new PoolList<MinMaxHeap<T>>(count, count, count);
+
+            getBuckets(ref top.FindMin(), ref top.FindMax(), top, newBuckets, count);
+
+            for (int i = newBuckets.Count - 1; i >= 0; --i)
+            {
+                var minMaxHeap = newBuckets[i];
+                
+                if (minMaxHeap != null)
+                {
+                    st.Push(minMaxHeap);
+                }
+            }
+            return 0;
+        }
+
+   ```  
+	
+</details>
+
 
 # Performance 
 
@@ -257,7 +313,7 @@ From observation of result, I can conclude that the main bottleneck of new algor
 
 According to previous statement, we can consider reusable poolable vector data structure to make that algorithm more practical. 
 
-C# ``BB sort`` poolable implementation (No counting map) has ``~20% better`` full sort runtime performance than quicksort hybrid algorithm implementation taken from the Rosseta codebase. Please note that it was slightly modified to work with list.
+C# ``BB sort`` poolable implementation without counting duplicates has ``~20% better`` full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. Please note that it was slightly modified to work with list.
 
 # Advantages
 
@@ -279,3 +335,4 @@ Because it has to do extra work before sorting, it performs worse than compariso
 - https://en.wikipedia.org/wiki/Bucket_sort
 - https://en.wikipedia.org/wiki/Counting_sort
 - http://rosettacode.org/wiki/Compare_sorting_algorithms%27_performance
+- http://www.cs.otago.ac.nz/staffpriv/mike/Papers/MinMaxHeaps/MinMaxHeaps.pdf
