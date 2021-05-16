@@ -2,6 +2,7 @@
 #include "qsortrand.h"
 #include <bb_sort.h>
 #include <bb_sort_get_top_n_lazy.h>
+#include <bb_sort_dictless.h>
 #include <vector>
 #include <random>
 #include <chrono>
@@ -25,12 +26,17 @@ void sort_and_test(std::vector<T> arr){
     std::vector<T> arrCopy(arr);
     std::reverse(arrCopy.begin(), arrCopy.end());
 
+    std::vector<T> arrCopy2(arr);
+    std::reverse(arrCopy2.begin(), arrCopy2.end());
+
     std::vector<T> goldenArr(arr);
     sort(goldenArr.begin(), goldenArr.end());
 
     bb_sort::sort(arrCopy);
+    bb_sort_dictless::sort(arrCopy2);
 
     test_arrays<T>(arrCopy, goldenArr);
+    test_arrays<T>(arrCopy2, goldenArr);
 }
 
 void test_bucket_worst_1() {
@@ -149,7 +155,7 @@ void test_duplicate_reports(){
 
         srand(i);
 
-        tests.emplace_back(sample(range<T>(-100000, 100000), 1000));
+        tests.emplace_back(sample(range<T>(-100000, 100000), 100));
         tests.emplace_back(sample(range<T>(-100000, 100000), 10000));
         tests.emplace_back(sample(range<T>(-100000, 100000), 100000));
         tests.emplace_back(sample(range<T>(-100000, 100000), 1000000));
@@ -178,7 +184,7 @@ void test_duplicate_reports(){
                 bb_sort::sort(bbsortTest);
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+                std::cout << "[" << "bb_sort     " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             int topN = 1;
@@ -190,7 +196,7 @@ void test_duplicate_reports(){
                 topNSorted = bb_sort_top_n_lazy::getTopSortedLazy(getSortedTest, topN );
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "get top " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+                std::cout << "[" << "get top    " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             int topN2 = 100;
@@ -202,7 +208,7 @@ void test_duplicate_reports(){
                 topNSorted2 = bb_sort_top_n_lazy::getTopSortedLazy(getSortedTest2, topN2 );
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "get top " << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+                std::cout << "[" << "get top  " << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             std::vector<T> qsortTest(test);
@@ -211,7 +217,27 @@ void test_duplicate_reports(){
                 quicksortrand(qsortTest.begin(), qsortTest.end(), std::less<T>());
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "qsort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+                std::cout << "[" << "qsort       " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            std::vector<T> getSortedTest4(test);
+            std::vector<T> topDNSorted;
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                topDNSorted = bb_sort_dictless::getTopSortedLazy(getSortedTest4, topN );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "get top D  " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            std::vector<T> getSortedTest5(test);
+            std::vector<T> topDNSorted2;
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                topDNSorted2 = bb_sort_dictless::getTopSortedLazy(getSortedTest5, topN2 );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "get top D" << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             bool good = qsortTest.size() == bbsortTest.size();
@@ -233,6 +259,17 @@ void test_duplicate_reports(){
 
                 if (!eq) {
                     std::cout << "Top N: Not eq" << i << " " << qsortTest[i] << "!=" << topNSorted2[i] << std::endl;
+                }
+
+                good = eq && good;
+            }
+
+            for (int i = 0; i < topN2; ++i) {
+
+                auto eq = qsortTest[i] == topDNSorted2[i];
+
+                if (!eq) {
+                    std::cout << "Top D N: Not eq" << i << " " << qsortTest[i] << "!=" << topDNSorted2[i] << std::endl;
                 }
 
                 good = eq && good;
@@ -286,7 +323,7 @@ void test_unique_reports(){
                 bb_sort::sort(bbsortTest);
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "bb_sort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+                std::cout << "[" << "bb_sort     " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             int topN = 1;
@@ -298,7 +335,7 @@ void test_unique_reports(){
                 topNSorted = bb_sort_top_n_lazy::getTopSortedLazy(getSortedTest, topN );
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "get top " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+                std::cout << "[" << "get top    " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             int topN2 = 100;
@@ -310,7 +347,7 @@ void test_unique_reports(){
                 topNSorted2 = bb_sort_top_n_lazy::getTopSortedLazy(getSortedTest2, topN2 );
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "get top " << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+                std::cout << "[" << "get top  " << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             std::vector<T> qsortTest(test);
@@ -319,7 +356,27 @@ void test_unique_reports(){
                 quicksortrand(qsortTest.begin(), qsortTest.end(), std::less<T>());
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "qsort" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+                std::cout << "[" << "qsort       " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            std::vector<T> getSortedTest4(test);
+            std::vector<T> topDNSorted;
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                topDNSorted = bb_sort_dictless::getTopSortedLazy(getSortedTest4, topN );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "get top D  " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            std::vector<T> getSortedTest5(test);
+            std::vector<T> topDNSorted2;
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                topDNSorted2 = bb_sort_dictless::getTopSortedLazy(getSortedTest5, topN2 );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "get top D" << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             bool good = qsortTest.size() == bbsortTest.size();
@@ -341,6 +398,17 @@ void test_unique_reports(){
 
                 if (!eq) {
                     std::cout << "Top N: Not eq" << i << " " << qsortTest[i] << "!=" << topNSorted2[i] << std::endl;
+                }
+
+                good = eq && good;
+            }
+
+            for (int i = 0; i < topN2; ++i) {
+
+                auto eq = qsortTest[i] == topDNSorted2[i];
+
+                if (!eq) {
+                    std::cout << "Top D N: Not eq" << i << " " << qsortTest[i] << "!=" << topDNSorted2[i] << std::endl;
                 }
 
                 good = eq && good;

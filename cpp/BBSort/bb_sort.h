@@ -110,11 +110,11 @@ namespace bb_sort {
         const float a = std::get<0>(params);
         const float b = std::get<1>(params);
 
-        for (auto const& item : iterable) {
+        for (auto & item : iterable) {
             // ApplyLinearTransform
             int index = ((a * getLog(item.value) + b));
             index = std::min(count - 1, index);
-            buckets[index].push(item);
+            buckets[index].push(std::move(item));
         }
     }
 
@@ -210,8 +210,7 @@ namespace bb_sort {
         for (int i = newBuckets.size() - 1; i >= 0; --i) {
             if (newBuckets[i].size() > 0)
             {
-                //copy
-                st.push(newBuckets[i]);
+                st.emplace(std::move(newBuckets[i]));
             }
         }
         return 0;
@@ -260,11 +259,11 @@ namespace bb_sort {
         const float b = std::get<1>(params);
 
         //pushing distinct items only
-        for (auto const& item : items) {
+        for (auto & item : items) {
             // ApplyLinearTransform
             int index = ((a * getLog(&item) + b));
             index = std::min(count - 1, index);
-            buckets[index].push(item);
+            buckets[index].push(std::move(item));
         }
 
         for (int i = buckets.size() - 1; i >= 0; --i) {
@@ -272,7 +271,7 @@ namespace bb_sort {
             if (buckets[i].size() > 0)
             {
                 //copy
-                st.push(buckets[i]);
+                st.emplace(std::move(buckets[i]));
             }
         }
     }

@@ -367,6 +367,18 @@ namespace minmax
         /**
          * @brief Adds an element with the given value onto the heap.
          **/
+        void push(T & zvalue)
+        {
+            // Push the value onto the end of the heap
+            heap_.emplace_back(zvalue);
+
+            // Reorder the heap so that the min-max heap property holds true
+            trickleUp(heap_.size() - 1);
+        }
+
+        /**
+        * @brief Adds an element with the given value onto the heap.
+        **/
         void push(const T & zvalue)
         {
             // Push the value onto the end of the heap
