@@ -3,11 +3,14 @@
 #include <bb_sort.h>
 #include <bb_sort_get_top_n_lazy.h>
 #include <bb_sort_dictless.h>
+#include <min_max_heap.h>
 #include <vector>
 #include <random>
 #include <chrono>
 
 //https://github.com/boost-ext/ut#tutorial
+
+void test_pool();
 
 template <typename T>
 void test_arrays(std::vector<T> bb_rez, std::vector<T> goldenArr){
@@ -16,7 +19,11 @@ void test_arrays(std::vector<T> bb_rez, std::vector<T> goldenArr){
 
     for (int i = 0; i < goldenArr.size(); ++i) {
         auto equal = goldenArr[i] == bb_rez[i];
-        boost::ut::expect(equal) << "Not equal at: " << i;
+
+        if (!equal){
+            std::cout << "Not equal at: " << i << std::endl;
+            boost::ut::expect(equal) << "Not equal at: " << i;
+        }
     }
 }
 
@@ -115,7 +122,7 @@ std::vector<T> rangeN(T start, T end, int n){
 
     std::vector<T> t;
 
-    for (int i = start; i < end && i <= n; ++i) {
+    for (int i = start; i < end && t.size() <= n; ++i) {
         t.emplace_back(i);
     }
 
@@ -161,7 +168,6 @@ void test_duplicate_reports(){
         tests.emplace_back(sample(range<T>(-100000, 100000), 1000000));
         tests.emplace_back(sample(range<T>(-100000, 100000), 10000000));
         tests.emplace_back(sample(range<T>(-100000, 100000), 100000000));
-        tests.emplace_back(sample(range<T>(-100000, 100000), 2000000000));
     }
 
     for(int i = 0; i < 2; ++i) {
@@ -224,7 +230,7 @@ void test_duplicate_reports(){
             std::vector<T> topDNSorted;
             {
                 const auto start = std::chrono::high_resolution_clock::now();
-                topDNSorted = bb_sort_dictless::getTopSortedLazy(getSortedTest4, topN );
+                topDNSorted = bb_sort_dictless::getTopSortedLazy(getSortedTest4, topN);
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
                 std::cout << "[" << "get top D  " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
@@ -234,10 +240,33 @@ void test_duplicate_reports(){
             std::vector<T> topDNSorted2;
             {
                 const auto start = std::chrono::high_resolution_clock::now();
-                topDNSorted2 = bb_sort_dictless::getTopSortedLazy(getSortedTest5, topN2 );
+                topDNSorted2 = bb_sort_dictless::getTopSortedLazy(getSortedTest5, topN2);
                 const auto stop = std::chrono::high_resolution_clock::now();
                 const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
                 std::cout << "[" << "get top D" << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            std::vector<T> bbSortDictless(test);
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                bb_sort_dictless::sort(bbSortDictless );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "bb_sort d   " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+
+                minmax::min_max_heap<T, pool::vector<T>> minMax;
+
+                for (int j = 0; j < test.size(); ++j) {
+                    minMax.push(test[i]);
+                }
+
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "minmax heap " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
             bool good = qsortTest.size() == bbsortTest.size();
@@ -248,6 +277,17 @@ void test_duplicate_reports(){
 
                 if (!eq) {
                     std::cout << "Not eq" << i << " " << qsortTest[i] << "!=" << bbsortTest[i] << std::endl;
+                }
+
+                good = eq && good;
+            }
+
+            for (int i = 0; i < qsortTest.size(); ++i) {
+
+                auto eq = qsortTest[i] == bbSortDictless[i];
+
+                if (!eq) {
+                    std::cout << "Not eq D " << i << " " << qsortTest[i] << "!=" << bbSortDictless[i] << std::endl;
                 }
 
                 good = eq && good;
@@ -296,7 +336,7 @@ void test_unique_reports(){
 
     for(int i = 0; i < 1; ++i) {
 
-        tests.emplace_back(rangeN<T>(-100000, 100000, 100));
+        tests.emplace_back(rangeN<T>(-10, 100000, 100));
         tests.emplace_back(rangeN<T>(-100000, 100000, 1000));
         tests.emplace_back(rangeN<T>(-100000, 100000, 10000));
         tests.emplace_back(rangeN<T>(-100000, 100000, 100000));
@@ -379,6 +419,29 @@ void test_unique_reports(){
                 std::cout << "[" << "get top D" << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
+            std::vector<T> bbSortDictless(test);
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                bb_sort_dictless::sort(bbSortDictless );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "bb_sort d   " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+
+                minmax::min_max_heap<T, pool::vector<T>> minMax;
+
+                for (int j = 0; j < test.size(); ++j) {
+                    minMax.push(test[i]);
+                }
+
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "minmax heap " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
             bool good = qsortTest.size() == bbsortTest.size();
 
             for (int i = 0; i < qsortTest.size(); ++i) {
@@ -387,6 +450,17 @@ void test_unique_reports(){
 
                 if (!eq) {
                     std::cout << "Not eq" << i << " " << qsortTest[i] << "!=" << bbsortTest[i] << std::endl;
+                }
+
+                good = eq && good;
+            }
+
+            for (int i = 0; i < qsortTest.size(); ++i) {
+
+                auto eq = qsortTest[i] == bbSortDictless[i];
+
+                if (!eq) {
+                    std::cout << "Not eq D" << i << " " << qsortTest[i] << "!=" << bbSortDictless[i] << std::endl;
                 }
 
                 good = eq && good;
@@ -441,7 +515,7 @@ int main() {
 
         test_duplicates();
 
-        test_duplicate_reports<uint8_t>();
+        test_unique_reports<int>();
 
         test_duplicate_reports<int>();
 
@@ -450,8 +524,6 @@ int main() {
         test_duplicate_reports<float>();
 
         test_duplicate_reports<double>();
-
-        test_unique_reports<int>();
 
         test_unique_reports<long>();
     }

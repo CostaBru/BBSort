@@ -46,7 +46,7 @@ namespace minmax
  * @tparam Compare   The comparison function class that will be used to
  *                   determine the ordering of the heap.
  **/
-    template<class T, class Container = std::vector<T>, class Compare = std::less<T> >
+    template<class T, class Container = std::vector<T>>
     class min_max_heap // Root is on Max level
     {
         //min_max_heap(const min_max_heap& that) = delete;
@@ -60,8 +60,6 @@ namespace minmax
         /**
          * @brief The comparison object used for comparisons.
          **/
-        Compare compare_;
-
         /**
          * @brief Returns the index of the parent of the node specified by
          *        @c zindex.
@@ -135,7 +133,7 @@ namespace minmax
             zindex_grandparent = parent(zindex_grandparent);
 
             // Check to see if we should swap with the grandparent
-            if (compare_(heap_[zindex], heap_[zindex_grandparent]) ^ MaxLevel)
+            if ((heap_[zindex] < heap_[zindex_grandparent]) ^ MaxLevel)
             {
                 std::swap(heap_[zindex_grandparent], heap_[zindex]);
                 trickleUp_<MaxLevel>(zindex_grandparent);
@@ -163,7 +161,7 @@ namespace minmax
             if (isOnMinLevel(zindex))
             {
                 // Check to see if we should swap with the parent
-                if (compare_(heap_[zindex_parent], heap_[zindex]))
+                if (heap_[zindex_parent] < heap_[zindex])
                 {
                     std::swap(heap_[zindex_parent], heap_[zindex]);
                     trickleUp_<true>(zindex_parent);
@@ -176,7 +174,7 @@ namespace minmax
             else
             {
                 // Check to see if we should swap with the parent
-                if (compare_(heap_[zindex], heap_[zindex_parent]))
+                if (heap_[zindex] < heap_[zindex_parent])
                 {
                     std::swap(heap_[zindex_parent], heap_[zindex]);
                     trickleUp_<false>(zindex_parent);
@@ -223,16 +221,17 @@ namespace minmax
             unsigned int left = leftChild(zindex);
 
             // Check the left and right child
-            if (left < heap_.size() && (compare_(heap_[left], heap_[smallestNode]) ^ MaxLevel))
+            if (left < heap_.size() && ((heap_[left] < heap_[smallestNode]) ^ MaxLevel))
                 smallestNode = left;
-            if (left + 1 < heap_.size() && (compare_(heap_[left + 1], heap_[smallestNode]) ^ MaxLevel))
+
+            if (left + 1 < heap_.size() && ((heap_[left + 1] < heap_[smallestNode]) ^ MaxLevel))
                 smallestNode = left + 1;
 
             /* Check the grandchildren which are guarenteed to be in consecutive
              * positions in memory. */
             unsigned int leftGrandchild = leftChild(left);
             for (unsigned int i = 0; i < 4 && leftGrandchild + i < heap_.size(); ++i)
-                if (compare_(heap_[leftGrandchild + i], heap_[smallestNode]) ^ MaxLevel)
+                if ((heap_[leftGrandchild + i] < heap_[smallestNode]) ^ MaxLevel)
                     smallestNode = leftGrandchild + i;
 
             // The current node was the smallest node, don't do anything.
@@ -245,7 +244,7 @@ namespace minmax
             if (smallestNode - left > 1)
             {
                 // If the smallest node's parent is bigger than it, swap them
-                if (compare_(heap_[parent(smallestNode)], heap_[smallestNode]) ^ MaxLevel)
+                if ((heap_[parent(smallestNode)] < heap_[smallestNode]) ^ MaxLevel)
                     std::swap(heap_[parent(smallestNode)], heap_[smallestNode]);
 
                 trickleDown_<MaxLevel>(smallestNode);
@@ -292,7 +291,7 @@ namespace minmax
                 default:
                     /* There are three or more elements in the heap, return the
                      * smallest child */
-                    return compare_(heap_[1], heap_[2]) ? 1 : 2;
+                    return heap_[1] < heap_[2] ? 1 : 2;
             }
         }
 
@@ -328,10 +327,18 @@ namespace minmax
         }
 
     public:
-        min_max_heap() { }
+        min_max_heap() {
 
-        min_max_heap(Container zcontainer, Compare zcompare = Compare())
-                : heap_(zcontainer), compare_(zcompare) { }
+        }
+
+        min_max_heap(Container zcontainer)
+                : heap_(zcontainer) {
+        }
+
+        min_max_heap(min_max_heap&& move) noexcept
+        {
+            move.heap_.swap(heap_);
+        }
 
         /**
          * @brief Returns true if and only if the heap is empty.
@@ -349,8 +356,6 @@ namespace minmax
             return (unsigned int)heap_.size();
         }
 
-
-
         T* begin(min_max_heap& x){ return x.heap_.begin(); }
         T* end(min_max_heap& x){ return x.heap_.end(); }
 
@@ -365,24 +370,12 @@ namespace minmax
         }
 
         /**
-         * @brief Adds an element with the given value onto the heap.
-         **/
-        void push(T & zvalue)
-        {
-            // Push the value onto the end of the heap
-            heap_.emplace_back(zvalue);
-
-            // Reorder the heap so that the min-max heap property holds true
-            trickleUp(heap_.size() - 1);
-        }
-
-        /**
         * @brief Adds an element with the given value onto the heap.
         **/
         void push(const T & zvalue)
         {
             // Push the value onto the end of the heap
-            heap_.emplace_back(zvalue);
+            heap_.push_back(zvalue);
 
             // Reorder the heap so that the min-max heap property holds true
             trickleUp(heap_.size() - 1);
@@ -428,13 +421,18 @@ namespace minmax
                 default:
                     /* There are three or more elements in the heap, return the
                      * smallest child */
-                    return compare_(heap_[1], heap_[2]) ? 2 : 1;
+                    return heap_[1] < heap_[2] ? 2 : 1;
             }
+        }
+
+        bool allDuplicates(){
+
+            return heap_[1] == heap_[0];
         }
 
         const std::tuple<unsigned int, unsigned int, unsigned int> getMaxMidMin() const
         {
-            if(compare_(heap_[1], heap_[2])){
+            if(heap_[1] < heap_[2]){
                 return std::make_tuple(0, 2, 1);
             }
             return std::make_tuple(0, 1, 2);

@@ -239,8 +239,8 @@ namespace robin_hood {
         template <class T, T... Ints>
         class integer_sequence {
         public:
-            using value_type = T;
-            static_assert(std::is_integral<value_type>::value, "not integral type");
+            using array_value_type = T;
+            static_assert(std::is_integral<array_value_type>::value, "not integral type");
             static constexpr std::size_t size() noexcept {
                 return sizeof...(Ints);
             }
@@ -333,7 +333,7 @@ template <typename E, typename... Args>
 [[noreturn]] ROBIN_HOOD(NOINLINE)
 #if ROBIN_HOOD(HAS_EXCEPTIONS)
 void doThrow(Args&&... args) {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-array_pointer-decay)
     throw E(std::forward<Args>(args)...);
 }
 #else
@@ -361,7 +361,7 @@ return t;
 
 // Allocates bulks of memory for objects of type T. This deallocates the memory in the destructor,
 // and keeps a linked list of the allocated memory around. Overhead per allocation is the size of a
-// pointer.
+// array_pointer.
 template <typename T, size_t MinNumAllocs = 4, size_t MaxNumAllocs = 256>
 class BulkPoolAllocator {
 public:
@@ -442,7 +442,7 @@ public:
             ROBIN_HOOD_LOG("std::free")
             std::free(ptr);
         } else {
-            ROBIN_HOOD_LOG("add to buffer")
+            ROBIN_HOOD_LOG("add to storage")
             add(ptr, numBytes);
         }
     }
@@ -574,7 +574,7 @@ struct nothrow {
 
 struct is_transparent_tag {};
 
-// A custom pair implementation is used in the map because std::pair is not is_trivially_copyable,
+// A pool pair implementation is used in the map because std::pair is not is_trivially_copyable,
 // which means it would  not be allowed to be used in std::memcpy. This struct is copyable, which is
 // also tested.
 template <typename T1, typename T2>
@@ -887,12 +887,12 @@ namespace detail {
 // [Node, Node, ... Node | info, info, ... infoSentinel ]
 //
 // * Node: either a DataNode that directly has the std::pair<key, val> as member,
-//   or a DataNode with a pointer to std::pair<key,val>. Which DataNode representation to use
+//   or a DataNode with a array_pointer to std::pair<key,val>. Which DataNode representation to use
 //   depends on how fast the swap() operation is. Heuristically, this is automatically choosen
 //   based on sizeof(). there are always 2^n Nodes.
 //
 // * info: Each Node in the map has a corresponding info byte, so there are 2^n info bytes.
-//   Each byte is initialized to 0, meaning the corresponding Node is empty. Set to 1 means the
+//   Each byte is hasValue to 0, meaning the corresponding Node is empty. Set to 1 means the
 //   corresponding node contains data. Set to 2 means the corresponding Node is filled, but it
 //   actually belongs to the previous position and was pushed out because that place is already
 //   taken.
@@ -954,7 +954,7 @@ namespace detail {
 
         // Primary template for the data node. We have special implementations for small and big
         // objects. For large objects it is assumed that swap() is fairly slow, so we allocate these
-        // on the heap so swap merely swaps a pointer.
+        // on the heap so swap merely swaps a array_pointer.
         template <typename M, bool>
         class DataNode {};
 
@@ -1780,7 +1780,7 @@ namespace detail {
         template <typename Iter>
         void insert(Iter first, Iter last) {
             for (; first != last; ++first) {
-                // value_type ctor needed because this might be called with std::pair's
+                // array_value_type ctor needed because this might be called with std::pair's
                 insert(value_type(*first));
             }
         }
@@ -1994,8 +1994,8 @@ namespace detail {
 
         iterator end() {
             ROBIN_HOOD_TRACE(this)
-            // no need to supply valid info pointer: end() must not be dereferenced, and only node
-            // pointer is compared.
+            // no need to supply valid info array_pointer: end() must not be dereferenced, and only node
+            // array_pointer is compared.
             return iterator{reinterpret_cast_no_cast_align_warning<Node*>(mInfo), nullptr};
         }
         const_iterator end() const { // NOLINT(modernize-use-nodiscard)

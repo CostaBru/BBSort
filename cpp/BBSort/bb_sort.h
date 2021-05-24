@@ -1,11 +1,11 @@
 #ifndef BBSort_H
 #define BBSort_H
 
-#define BUCKET minmax::min_max_heap<sort_item<T>>
+#define BUCKET minmax::min_max_heap<sort_item<T>, pool::vector<sort_item<T>>>
 
 #define STACK std::stack<BUCKET>
 
-#define BUCKETS std::vector<BUCKET>
+#define BUCKETS pool::vector_lazy<BUCKET>
 
 #include "fast_map.h"
 #include <vector>
@@ -13,7 +13,10 @@
 #include <cmath>
 #include <stack>
 #include <min_max_heap.h>
+#include "poolable_vector.h"
+#include "poolable_vector_lazy.h"
 #include <chrono>
+#include <iostream>
 
 namespace bb_sort {
 
@@ -30,6 +33,9 @@ namespace bb_sort {
     public :
         T value;
         int count = 0;
+
+        sort_item(){
+        }
 
         sort_item(T val) {
             value = val;
@@ -58,6 +64,12 @@ namespace bb_sort {
 
         friend bool operator!=(const sort_item &c1, const sort_item &c2) {
             return c1.value != c2.value;
+        }
+
+        friend std::ostream& operator << (std::ostream& os, const sort_item& m)
+        {
+            os << "VAL:" << m.value << " , COUNT: " << m.count << std::endl;
+            return os ;
         }
     };
 
@@ -110,7 +122,7 @@ namespace bb_sort {
         const float a = std::get<0>(params);
         const float b = std::get<1>(params);
 
-        for (auto & item : iterable) {
+        for (auto const& item : iterable) {
             // ApplyLinearTransform
             int index = ((a * getLog(item.value) + b));
             index = std::min(count - 1, index);
@@ -125,6 +137,7 @@ namespace bb_sort {
 
             const int newIndex = index + i;
             if (newIndex >= output.size()){
+
                 break;
             }
             output[newIndex] = val.value;
@@ -199,7 +212,9 @@ namespace bb_sort {
               std::vector<T> &output,
               int index) {
 
-        const int count = (st.top().size() / 2) + 1;
+        int count = (st.top().size() / 2) + 1;
+
+        count = std::min(count, 128);
 
         BUCKETS newBuckets(count);
 
@@ -270,7 +285,6 @@ namespace bb_sort {
 
             if (buckets[i].size() > 0)
             {
-                //copy
                 st.emplace(std::move(buckets[i]));
             }
         }
@@ -286,6 +300,7 @@ namespace bb_sort {
         T maxEl = array[0];
 
         for (const auto& item: array) {
+
             minEl = std::min(item, minEl);
             maxEl = std::max(item, maxEl);
         }
@@ -297,9 +312,12 @@ namespace bb_sort {
         robin_hood::unordered_map<T, int> distinctMap;
 
         for (const auto& item: array) {
+
             if (distinctMap.contains(item)) {
+
                 distinctItems[distinctMap[item]].count += 1;
             } else {
+
                 sort_item<T> sortItem(item);
                 distinctItems.emplace_back(sortItem);
                 distinctMap[item] = distinctItems.size() - 1;
@@ -316,11 +334,13 @@ namespace bb_sort {
     void sort(std::vector<T> &array) {
 
         if (array.size() <= 1) {
+
             return;
         }
 
-        long size = array.size();
-        const int count = std::min(size, 1024l);
+        long count = array.size();
+        count = std::min(count, 128l);
+
         BUCKETS buckets(count);
         STACK st;
 
@@ -340,13 +360,15 @@ namespace bb_sort {
         if (size <= 1) {
 
             for (int i = 0; i < size; ++i) {
+
                 result[i] = array[i];
             }
 
             return result;
         }
 
-        const int bucketCount = std::min(size, 1024l);
+        const int bucketCount =  std::min(size, 128l);
+
         BUCKETS buckets(bucketCount);
         STACK st;
 

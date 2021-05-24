@@ -1,15 +1,16 @@
 #ifndef BBSort_top_n_H
 #define BBSort_top_n_H
 
-#define BUCKET_TOPN minmax::min_max_heap<T>
+#define BUCKET_TOPN minmax::min_max_heap<T, pool::vector<T>>
 
 #define STACK_TOPN std::stack<BUCKET_TOPN>
 
 #define MAP_TOPN robin_hood::unordered_map<T, int>
 
-#define BUCKETS_TOPN std::vector<BUCKET_TOPN>
+#define BUCKETS_TOPN pool::vector_lazy<BUCKET_TOPN>
 
 #include "fast_map.h"
+#include "poolable_vector.h"
 #include <vector>
 #include <tuple>
 #include <cmath>
@@ -128,7 +129,7 @@ namespace bb_sort_top_n_lazy {
 
         const int count = (st.top().size() / 2) + 1;
 
-        std::vector<minmax::min_max_heap<T>> newBuckets(count);
+        BUCKETS_TOPN newBuckets(count);
 
         getBuckets<T>(st.top(), newBuckets, count);
 
@@ -236,7 +237,7 @@ namespace bb_sort_top_n_lazy {
 
         long int distinctCount = countMap.size();
 
-        const int bucketCount = std::min(distinctCount, 1024l);
+        const int bucketCount =  std::min(distinctCount, 128l);
 
         BUCKETS_TOPN buckets(bucketCount);
 
