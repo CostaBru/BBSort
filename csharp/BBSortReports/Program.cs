@@ -317,6 +317,18 @@ namespace BBSortReports
 
                         good = eq && good;
                     }
+                    
+                    for (int j = 0; j < qsortTest.Length; ++j)
+                    {
+                        var eq = EqualityComparer<T>.Default.Equals(qsortTest[j], bbsortDictlessTest[j]);
+
+                        if (!eq)
+                        {
+                            Print($"Not eq  D {j} {qsortTest[j]} != {bbsortDictlessTest[j]}");
+                        }
+
+                        good = eq && good;
+                    }
 
                     if (!good)
                     {
