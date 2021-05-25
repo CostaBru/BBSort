@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Flexols.Data.Collections;
 
-
 namespace BBsort.DictLess
 {
     public class BBSort<T>
@@ -46,19 +45,19 @@ namespace BBsort.DictLess
             return (0.0f, 0.0f);
         }
 
-        void getBuckets(ref T min, ref T max, MinMaxHeap<T> iterable, PoolList<MinMaxHeap<T>> buckets, int count)
+        void getBuckets(ref T min, ref T max, MinMaxHeap<T> items, PoolList<MinMaxHeap<T>> buckets, int count)
         {
             var minLog = m_getLog(min);
             var maxLog = m_getLog(max);
 
             var (a, b) = GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
-            var cnt = iterable.Count;
+            var cnt = items.Count;
 
             for(int i = 0; i < cnt; i++)
             {
                 // ApplyLinearTransform
-                int index = (int)((a * m_getLog(iterable.At(i)) + b));
+                int index = (int)((a * m_getLog(items.At(i)) + b));
                 index = Math.Min(count - 1, index);
                 var bucket = buckets[index];
 
@@ -68,40 +67,34 @@ namespace BBsort.DictLess
                     const int arraySize = 2;
                     buckets[index] = bucket = new MinMaxHeap<T>(new PoolList<T>(maxCapacity, arraySize));
                 }
-                bucket.Add(iterable.At(i));
+                bucket.Add(items.At(i));
             }
         }
 
         int case1(Stack<MinMaxHeap<T>> st,
-                  MinMaxHeap<T> top,
-                  T[] output,
-                  int index)
+            MinMaxHeap<T> top,
+            T[] output,
+            int index)
         {
-            if (index < output.Length)
-            {
-                output[index] = top.At(0);
-            }
+            output[index] = top.At(0);
 
             return 1;
         }
-        
+
         int caseAllDuplicates(MinMaxHeap<T> top,
             T[] output,
             int index)
         {
             T val = top.At(0);
+
+            var topCount = top.Count;
             
-            for (int i = 0; i < top.Count && i < output.Length; ++i)
+            for (int i = 0; i < topCount && i < output.Length; ++i)
             {
-                int newIndex = index + i;
-                if (newIndex >= output.Length)
-                {
-                    break;
-                }
-                output[newIndex] = val;
+                output[index + i] = val;
             }
 
-            return top.Count;
+            return topCount;
         }
 
         int case2(Stack<MinMaxHeap<T>> st,
@@ -109,15 +102,8 @@ namespace BBsort.DictLess
                       T[] output,
                       int index)
         {
-            if (index < output.Length)
-            {
-                output[index] = top.At(1);
-            }
-            
-            if (index + 1 < output.Length)
-            {
-                output[index + 1] = top.At(0);
-            }
+            output[index] = top.At(1);
+            output[index + 1] = top.At(0);
 
             return 2;
         }
@@ -130,20 +116,9 @@ namespace BBsort.DictLess
             //single comparison
             var (maxIndex, midIndex, minIndex) = top.GetMaxMidMin();
 
-            if (index < output.Length)
-            {
-                output[index] = top.At(minIndex);
-            }
-            
-            if (index + 1 < output.Length)
-            {
-                output[index + 1] = top.At(midIndex);
-            }
-            
-            if (index + 2 < output.Length)
-            {
-                output[index + 2] = top.At(maxIndex);
-            }
+            output[index] = top.At(minIndex);
+            output[index + 1] = top.At(midIndex);
+            output[index + 2] = top.At(maxIndex);
 
             return 3;
         }
@@ -178,7 +153,10 @@ namespace BBsort.DictLess
 
         void bbSortToStream(Stack<MinMaxHeap<T>> st, T[] output, int count)
         {
-            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>,  T[], int, int>[] { case1, case2, case3, caseN };
+            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>,  T[], int, int>[]
+            {
+                case1, case2, case3, caseN
+            };
 
             int index = 0;
 
@@ -195,15 +173,61 @@ namespace BBsort.DictLess
         void getTopStackBuckets(T[] array,
                                 Stack<MinMaxHeap<T>> st)
         {
-
-            MinMaxHeap<T> items = new MinMaxHeap<T>(new PoolList<T>(array.Length, 4));
-
-            for (var index = 0; index < array.Length; index++)
+            T min = array[0];
+            T max = array[0];
+            
+            for (var index = 1; index < array.Length; index++)
             {
-                items.Add(array[index]);
+                if (Comparer<T>.Default.Compare(min, array[index]) > 0)
+                {
+                    min = array[index];
+                }
+                
+                if (Comparer<T>.Default.Compare( array[index], max) > 0)
+                {
+                    max = array[index];
+                }
             }
 
-            caseN(st, items, array, 0);          
+            if (Comparer<T>.Default.Compare(min, max) == 0)
+            {
+                return;
+            }
+
+            var bucketCount = Math.Min(array.Length, 128);
+            
+            var buckets = new PoolList<MinMaxHeap<T>>(bucketCount, bucketCount, bucketCount);
+
+            var minLog = m_getLog(min);
+            var maxLog = m_getLog(max);
+
+            var (a, b) = GetLinearTransformParams(minLog, maxLog, 0, bucketCount - 1);
+
+            for(int i = 0; i < bucketCount && i < array.Length; i++)
+            {
+                // ApplyLinearTransform
+                int index = (int)((a * m_getLog(array[i]) + b));
+                index = Math.Min(bucketCount - 1, index);
+                var bucket = buckets[index];
+
+                if (bucket == null)
+                {
+                    const int maxCapacity = int.MaxValue;
+                    const int arraySize = 2;
+                    buckets[index] = bucket = new MinMaxHeap<T>(new PoolList<T>(maxCapacity, arraySize));
+                }
+                bucket.Add(array[i]);
+            }
+
+            for (int i = buckets.Count - 1; i >= 0; --i)
+            {
+                var minMaxHeap = buckets[i];
+                
+                if (minMaxHeap != null)
+                {
+                    st.Push(minMaxHeap);
+                }
+            }
         }
     }
 }

@@ -18,10 +18,10 @@ namespace BBSortTests
             System.Console.WriteLine(message);
         }
 
-        public void test_arrays<T>(List<T> bb_rez, T[] goldenArr)
+        public void test_arrays<T>(T[] bb_rez, T[] goldenArr)
         {
 
-            Assert.AreEqual(goldenArr.Length, bb_rez.Count, "sizes not equal");
+            Assert.AreEqual(goldenArr.Length, bb_rez.Length, "sizes not equal");
 
             for (int i = 0; i < goldenArr.Length; ++i)
             {
@@ -41,7 +41,9 @@ namespace BBSortTests
 
             var bbSort = new BBsort.Counting.BBSort<float>(BBsort.Counting.BBSort<float>.getLog);
 
-            var bbSortTest = new List<float>(arrCopy);
+            var bbSortTest = new float[arrCopy.Count];
+            
+            arrCopy.CopyTo(bbSortTest, 0);
 
             bbSort.Sort(bbSortTest);
 

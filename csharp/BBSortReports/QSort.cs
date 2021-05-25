@@ -121,8 +121,8 @@ namespace RosettaCode
                 //[Assert]There exists some index >= Left where entries[index] >= median
                 //[Assert]There exists some index <= Right where entries[index] <= median
                 // So, there is no need for Left or Right bound checks
-                while (median.CompareTo(entries[Left]) > 0) Left++;
-                while (median.CompareTo(entries[Right]) < 0) Right--;
+                while (Comparer<T>.Default.Compare(median, entries[Left]) > 0) Left++;
+                while (Comparer<T>.Default.Compare(median, entries[Right]) < 0) Right--;
 
                 //[Assert]entries[Right] <= median <= entries[Left]
                 if (Right <= Left) break;
@@ -151,8 +151,8 @@ namespace RosettaCode
         [Conditional("Tripartite")]
         private void swapOut(T median, T[] entries)
         {
-            if (median.CompareTo(entries[Left]) == 0) Swap(entries, LeftMedian++, Left);
-            if (median.CompareTo(entries[Right]) == 0) Swap(entries, Right, RightMedian--);
+            if (Comparer<T>.Default.Compare(median,entries[Left]) == 0) Swap(entries, LeftMedian++, Left);
+            if (Comparer<T>.Default.Compare(median,entries[Right]) == 0) Swap(entries, Right, RightMedian--);
         }
 
         [Conditional("Tripartite")]
@@ -192,7 +192,7 @@ namespace RosettaCode
         private static void insert(T[] entries, Int32 first, Int32 next)
         {
             var entry = entries[next];
-            while (next > first && entries[next - 1].CompareTo(entry) > 0)
+            while (next > first && Comparer<T>.Default.Compare(entries[next - 1],entry) > 0)
                 entries[next] = entries[--next];
             entries[next] = entry;
         }

@@ -289,7 +289,7 @@ namespace Flexols.Data.Collections
              * positions in memory. */
             int leftGrandchild = leftChild(left);
             var heapCount = heap_.m_size;
-            for (int i = 0; i < 4 && leftGrandchild + i < heapCount; ++i)
+            for (int i = 0; i < 4 && (leftGrandchild + i) < heapCount && i < heap_.m_items.Length; ++i)
                 if ((comparer_.Compare(heap_.m_items[leftGrandchild + i], heap_.m_items[smallestNode]) ^ (MaxLevel ? 1 : 0)) == -1)
                     smallestNode = leftGrandchild + i;
 
