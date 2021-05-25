@@ -101,16 +101,16 @@ namespace bb_sort_top_n_lazy {
               MAP_TOPN &countMap) {
 
         //single comparison
-        const auto &top = st.top();
-        const auto maxMidMin = top.getMaxMidMin();
+        auto &top = st.top();
+        auto maxMidMin = top.getMaxMidMin();
 
-        const auto maxIndex = std::get<0>(maxMidMin);
-        const auto midIndex = std::get<1>(maxMidMin);
-        const auto minIndex = std::get<2>(maxMidMin);
+        auto maxIndex = std::get<0>(maxMidMin);
+        auto midIndex = std::get<1>(maxMidMin);
+        auto minIndex = std::get<2>(maxMidMin);
 
-        const auto count1 = countMap[top.At(minIndex)];
-        const auto count2 = countMap[top.At(midIndex)];
-        const auto count3 = countMap[top.At(maxIndex)];
+        auto count1 = countMap[top.At(minIndex)];
+        auto count2 = countMap[top.At(midIndex)];
+        auto count3 = countMap[top.At(maxIndex)];
 
         fillStream<T>(top.At(minIndex), output, index, count1);
         fillStream<T>(top.At(midIndex), output, index + count1, count2);

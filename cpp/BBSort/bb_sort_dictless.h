@@ -3,7 +3,7 @@
 
 #define BUCKET_D minmax::min_max_heap<T, pool::vector<T>>
 
-#define STACK_D std::stack<BUCKET_D>
+#define STACK_D pool::vector<BUCKET_D>
 
 #define BUCKETS_D pool::vector_lazy<BUCKET_D>
 
@@ -20,49 +20,21 @@
 namespace bb_sort_dictless {
 
     template<typename T>
-    void getBuckets(const BUCKET_D & iterable, BUCKETS_D & buckets, int count) {
+    void getBuckets(BUCKET_D & iterable, BUCKETS_D & buckets, int count) {
 
-        const float minLog = bb_sort::getLog(iterable.findMin());
-        const float maxLog = bb_sort::getLog(iterable.findMax());
+        float minLog = bb_sort::getLog(iterable.findMin());
+        float maxLog = bb_sort::getLog(iterable.findMax());
 
-        const std::tuple<float, float> params = bb_sort::GetLinearTransformParams(minLog, maxLog, 0, count - 1);
+        std::tuple<float, float> params = bb_sort::GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
-        const float a = std::get<0>(params);
-        const float b = std::get<1>(params);
+        float a = std::get<0>(params);
+        float b = std::get<1>(params);
 
-        for (auto & item : iterable) {
+        for(int i = 0; i < iterable.size(); ++i) {
             // ApplyLinearTransform
-            int index = ((a * bb_sort::getLog(item) + b));
+            int index = ((a * bb_sort::getLog(iterable.At(i)) + b));
             index = std::min(count - 1, index);
-            buckets[index].push(item);
-        }
-    }
-
-    template<typename T>
-    inline void fillStream(const T & val,
-                           std::vector<T> & output,
-                           const int index,
-                           const int count) {
-
-        for (int i = 0; i < count; ++i) {
-
-            const int newIndex = index + i;
-            if (newIndex >= output.size()){
-
-                break;
-            }
-            output[newIndex] = val;
-        }
-    }
-
-    template<typename T>
-    inline void fillStreamSingle(const T & val,
-                           std::vector<T> & output,
-                           const int index) {
-
-        if (index < output.size()) {
-
-            output[index] = val;
+            buckets[index].emplace(iterable.At(i));
         }
     }
 
@@ -74,9 +46,14 @@ namespace bb_sort_dictless {
 
         auto count = top.size();
 
-        fillStream<T>(top.At(0), output, index, count);
+        auto val = top.At(0);
 
-        st.pop();
+        for (int i = 0; i < count; ++i) {
+
+            output[index + i] = val;
+        }
+
+        st.pop_back();
 
         return count;
     }
@@ -87,9 +64,9 @@ namespace bb_sort_dictless {
               std::vector<T> & output,
               int index) {
 
-        fillStreamSingle<T>(top.At(0), output, index);
+        output[index] = top.At(0);
 
-        st.pop();
+        st.pop_back();
 
         return 1;
     }
@@ -100,10 +77,10 @@ namespace bb_sort_dictless {
               std::vector<T> & output,
               int index) {
 
-        fillStreamSingle<T>(top.At(1), output, index);
-        fillStreamSingle<T>(top.At(0), output, index + 1);
+        output[index] = top.At(1);
+        output[index + 1] = top.At(0);
 
-        st.pop();
+        st.pop_back();
 
         return 2;
     }
@@ -117,15 +94,11 @@ namespace bb_sort_dictless {
         //single comparison
         const auto maxMidMin = top.getMaxMidMin();
 
-        const auto maxIndex = std::get<0>(maxMidMin);
-        const auto midIndex = std::get<1>(maxMidMin);
-        const auto minIndex = std::get<2>(maxMidMin);
+        output[index] = top.At(std::get<2>(maxMidMin));
+        output[index + 1] = top.At(std::get<1>(maxMidMin));
+        output[index + 2] = top.At(std::get<0>(maxMidMin));
 
-        fillStreamSingle<T>(top.At(minIndex), output, index);
-        fillStreamSingle<T>(top.At(midIndex), output, index + 1);
-        fillStreamSingle<T>(top.At(maxIndex), output, index + 2);
-
-        st.pop();
+        st.pop_back();
 
         return 3;
     }
@@ -141,21 +114,19 @@ namespace bb_sort_dictless {
             return caseAllDuplicates(st, top, output, index);
         }
 
-        long int count = top.size();
-
-        count = std::min(count, 128l);
+        long int count = (top.size() / 2) + 1;
 
         BUCKETS_D newBuckets(count);
 
         getBuckets<T>(top, newBuckets, count);
 
-        st.pop();
+        st.pop_back();
 
         for (int i = newBuckets.size() - 1; i >= 0; --i) {
 
             if (newBuckets.hasValue(i)) {
 
-                st.emplace(std::move(newBuckets[i]));
+                st.emplace_back(std::move(newBuckets[i]));
             }
         }
 
@@ -175,9 +146,9 @@ namespace bb_sort_dictless {
 
         int index = 0;
 
-        while (st.size() > 0 && index < count) {
+        while (!st.empty()) {
 
-            const auto caseIndex = std::min(st.top().size() - 1, 3U);
+            const auto caseIndex = std::min(st.back().size() - 1, 3U);
             const auto switchCaseFunc = func_array<int(
                     STACK_D &,
                     BUCKET_D &,
@@ -185,34 +156,54 @@ namespace bb_sort_dictless {
                     int)>
             ::switchCase[caseIndex];
 
-            index += switchCaseFunc(st, st.top(), output, index);
+            index += switchCaseFunc(st, st.back(), output, index);
         }
     }
 
     template<typename T>
-    void prepareTopN(STACK_D & st,
-              BUCKET_D & top,
-              std::vector<T> & output,
-              int index) {
+    void getTopStackBuckets(std::vector<T> & array, STACK_D & st) {
 
-        if (top.allDuplicates()){
+        T min = array[0];
+        T max = array[0];
 
-            fillStream<T>(top.At(0), output, index, top.size());
+        for(int i = 1; i < array.size(); ++i){
+
+            min = std::min(min, array[i]);
+            max = std::max(max, array[i]);
         }
 
-        long int count = top.size();
+        if (min == max) {
 
-        count = std::min(count, 128l);
+            return;
+        }
+
+        int count = array.size();
+
+        count = std::min(count, 128);
 
         BUCKETS_D newBuckets(count);
 
-        getBuckets<T>(top, newBuckets, count);
+        const float minLog = bb_sort::getLog(min);
+        const float maxLog = bb_sort::getLog(max);
 
-        for (int i = newBuckets.size() - 1; i >= 0; --i) {
+        const std::tuple<float, float> params = bb_sort::GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
-            if (newBuckets.hasValue(i))
-            {
-                st.emplace(std::move(newBuckets[i]));
+        const float a = std::get<0>(params);
+        const float b = std::get<1>(params);
+
+        for(int i = 0; i < array.size(); ++i) {
+
+            // ApplyLinearTransform
+            int index = ((a * bb_sort::getLog(array[i]) + b));
+            index = std::min(count - 1, index);
+            newBuckets[index].emplace(array[i]);
+        }
+
+        for (int i = count - 1; i >= 0; --i) {
+
+            if (newBuckets.hasValue(i)) {
+
+                st.emplace_back(std::move(newBuckets[i]));
             }
         }
     }
@@ -222,57 +213,16 @@ namespace bb_sort_dictless {
 
         long int size = array.size();
 
-        BUCKET_D top;
-
         if (size <= 1) {
 
             return;
         }
 
-        for (auto & item: array) {
+        STACK_D st;
 
-            top.push(item);
-        }
+        getTopStackBuckets(array, st);
 
-        STACK_D topBucketsStack;
-
-        prepareTopN(topBucketsStack, top, array, size);
-
-        bbSortToStream<T>(topBucketsStack, array, size);
-    }
-
-    template<typename T>
-    std::vector<T> getTopSortedLazy(std::vector<T> & array, long int count) {
-
-        long int size = array.size();
-
-        count = std::min(size, count);
-
-        std::vector<T> result(count);
-
-        if (size <= 1) {
-
-            for (int i = 0; i < size; ++i) {
-                result[i] = array[i];
-            }
-
-            return result;
-        }
-
-        BUCKET_D top;
-
-        for (auto & item: array) {
-
-            top.push(item);
-        }
-
-        STACK_D topBucketsStack;
-
-        prepareTopN(topBucketsStack, top, result, count);
-
-        bbSortToStream<T>(topBucketsStack, result, count);
-
-        return result;
+        bbSortToStream<T>(st, array, size);
     }
 }
 #endif //BBSORT_SOLUTION_BB_SORT_DICTLESS_H

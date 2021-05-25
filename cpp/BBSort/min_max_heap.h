@@ -124,7 +124,8 @@ namespace minmax
             if (zindex == 0) return;
 
             // Find the parent of the passed node first
-            unsigned int zindex_grandparent = parent(zindex);
+            //unsigned int zindex_grandparent = parent(zindex);
+            unsigned int zindex_grandparent =  (zindex - 1) / 2;;
 
             // If there is no grandparent, return
             if (zindex_grandparent == 0) return;
@@ -156,14 +157,16 @@ namespace minmax
             if (zindex == 0) return;
 
             // Find the parent of the passed node
-            unsigned int zindex_parent = parent(zindex);
+           // unsigned int zindex_parent = parent(zindex);
+            unsigned int zindex_parent = (zindex - 1) / 2;;
 
-            if (isOnMinLevel(zindex))
+            //if (isOnMinLevel(zindex))
+            if (log2(zindex + 1) % 2 == 1)
             {
                 // Check to see if we should swap with the parent
-                if (heap_[zindex_parent] < heap_[zindex])
+                if (heap_.array[zindex_parent] < heap_.array[zindex])
                 {
-                    std::swap(heap_[zindex_parent], heap_[zindex]);
+                    std::swap(heap_.array[zindex_parent], heap_.array[zindex]);
                     trickleUp_<true>(zindex_parent);
                 }
                 else
@@ -174,9 +177,9 @@ namespace minmax
             else
             {
                 // Check to see if we should swap with the parent
-                if (heap_[zindex] < heap_[zindex_parent])
+                if (heap_.array[zindex] < heap_.array[zindex_parent])
                 {
-                    std::swap(heap_[zindex_parent], heap_[zindex]);
+                    std::swap(heap_.array[zindex_parent], heap_.array[zindex]);
                     trickleUp_<false>(zindex_parent);
                 }
                 else
@@ -208,7 +211,7 @@ namespace minmax
              * equals true. */
 
             // Ensure the element exists.
-            if (zindex >= heap_.size())
+            if (zindex >= heap_.length)
                 throw std::invalid_argument("Element specified by zindex does not "
                                             "exist");
 
@@ -221,31 +224,31 @@ namespace minmax
             unsigned int left = leftChild(zindex);
 
             // Check the left and right child
-            if (left < heap_.size() && ((heap_[left] < heap_[smallestNode]) ^ MaxLevel))
+            if (left < heap_.length && ((heap_.array[left] < heap_.array[smallestNode]) ^ MaxLevel))
                 smallestNode = left;
 
-            if (left + 1 < heap_.size() && ((heap_[left + 1] < heap_[smallestNode]) ^ MaxLevel))
+            if (left + 1 < heap_.length && ((heap_.array[left + 1] < heap_.array[smallestNode]) ^ MaxLevel))
                 smallestNode = left + 1;
 
             /* Check the grandchildren which are guarenteed to be in consecutive
              * positions in memory. */
             unsigned int leftGrandchild = leftChild(left);
             for (unsigned int i = 0; i < 4 && leftGrandchild + i < heap_.size(); ++i)
-                if ((heap_[leftGrandchild + i] < heap_[smallestNode]) ^ MaxLevel)
+                if ((heap_.array[leftGrandchild + i] < heap_.array[smallestNode]) ^ MaxLevel)
                     smallestNode = leftGrandchild + i;
 
             // The current node was the smallest node, don't do anything.
             if (zindex == smallestNode) return;
 
             // Swap the current node with the smallest node
-            std::swap(heap_[zindex], heap_[smallestNode]);
+            std::swap(heap_.array[zindex], heap_.array[smallestNode]);
 
             // If the smallest node was a grandchild...
             if (smallestNode - left > 1)
             {
                 // If the smallest node's parent is bigger than it, swap them
-                if ((heap_[parent(smallestNode)] < heap_[smallestNode]) ^ MaxLevel)
-                    std::swap(heap_[parent(smallestNode)], heap_[smallestNode]);
+                if ((heap_.array[parent(smallestNode)] < heap_.array[smallestNode]) ^ MaxLevel)
+                    std::swap(heap_.array[parent(smallestNode)], heap_.array[smallestNode]);
 
                 trickleDown_<MaxLevel>(smallestNode);
             }
@@ -275,7 +278,7 @@ namespace minmax
         unsigned int findMinIndex() const
         {
             // There are four cases
-            switch (heap_.size())
+            switch (heap_.length)
             {
                 case 0:
                     // The heap is empty so throw an error
@@ -291,7 +294,7 @@ namespace minmax
                 default:
                     /* There are three or more elements in the heap, return the
                      * smallest child */
-                    return heap_[1] < heap_[2] ? 1 : 2;
+                    return heap_.array[1] < heap_.array[2] ? 1 : 2;
             }
         }
 
@@ -345,7 +348,7 @@ namespace minmax
          **/
         bool empty() const
         {
-            return heap_.size() == 0;
+            return heap_.length == 0;
         }
 
         /**
@@ -353,7 +356,7 @@ namespace minmax
          **/
         unsigned int size() const
         {
-            return (unsigned int)heap_.size();
+            return (unsigned int)heap_.length;
         }
 
         T* begin(min_max_heap& x){ return x.heap_.begin(); }
@@ -378,7 +381,19 @@ namespace minmax
             heap_.push_back(zvalue);
 
             // Reorder the heap so that the min-max heap property holds true
-            trickleUp(heap_.size() - 1);
+            trickleUp(heap_.length - 1);
+        }
+
+        /**
+        * @brief Adds an element with the given value onto the heap.
+        **/
+        void emplace(T & zvalue)
+        {
+            // Push the value onto the end of the heap
+            heap_.emplace_back(zvalue);
+
+            // Reorder the heap so that the min-max heap property holds true
+            trickleUp(heap_.length - 1);
         }
 
         /**
@@ -388,7 +403,7 @@ namespace minmax
          **/
         const T & findMax() const
         {
-            return heap_[0];
+            return heap_.array[0];
         }
 
         /**
@@ -399,13 +414,13 @@ namespace minmax
         const T & findMin() const
         {
             // findMinIndex() will throgh an underflow_error if no min exists
-            return heap_[findMinIndex()];
+            return heap_.array[findMinIndex()];
         }
 
         const T & findMid() const
         {
             // There are four cases
-            switch (heap_.size())
+            switch (heap_.length)
             {
                 case 0:
                     // The heap is empty so throw an error
@@ -421,26 +436,26 @@ namespace minmax
                 default:
                     /* There are three or more elements in the heap, return the
                      * smallest child */
-                    return heap_[1] < heap_[2] ? 2 : 1;
+                    return heap_.array[1] < heap_.array[2] ? 2 : 1;
             }
         }
 
         bool allDuplicates(){
 
-            return heap_[1] == heap_[0];
+            return heap_.array[1] == heap_.array[0];
         }
 
         const std::tuple<unsigned int, unsigned int, unsigned int> getMaxMidMin() const
         {
-            if(heap_[1] < heap_[2]){
+            if(heap_.array[1] < heap_.array[2]){
                 return std::make_tuple(0, 2, 1);
             }
             return std::make_tuple(0, 1, 2);
         }
 
-        const T & At(unsigned int index) const
+        T & At(unsigned int index)
         {
-            return heap_[index];
+            return heap_.array[index];
         }
 
         /**

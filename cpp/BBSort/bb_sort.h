@@ -74,7 +74,7 @@ namespace bb_sort {
     };
 
     template<typename T>
-    inline float getLog(const sort_item<T>* x) {
+    inline float getLog(sort_item<T>* x) {
 
         const float abs = std::abs(x->value);
         if (abs < 2) {
@@ -84,7 +84,7 @@ namespace bb_sort {
         return x->value < 0 ? -lg : lg;
     }
 
-    inline float getLog(const float x) {
+    inline float getLog(float x) {
 
         const float abs = std::abs(x);
         if (abs < 2) {
@@ -186,15 +186,15 @@ namespace bb_sort {
               int index) {
 
         //single comparison
-        const auto& top = st.top();
-        const auto maxMidMin = top.getMaxMidMin();
+        auto& top = st.top();
+        auto maxMidMin = top.getMaxMidMin();
 
-        const auto maxIndex = std::get<0>(maxMidMin);
-        const auto midIndex = std::get<1>(maxMidMin);
-        const auto minIndex = std::get<2>(maxMidMin);
+        auto maxIndex = std::get<0>(maxMidMin);
+        auto midIndex = std::get<1>(maxMidMin);
+        auto minIndex = std::get<2>(maxMidMin);
 
-        const auto count1 = top.At(minIndex).count;
-        const auto count2 = top.At(midIndex).count;
+        auto count1 = top.At(minIndex).count;
+        auto count2 = top.At(midIndex).count;
 
         fillStream<T>(top.At(minIndex), output, index);
         fillStream<T>(top.At(midIndex), output, index + count1);
@@ -260,18 +260,18 @@ namespace bb_sort {
     template<typename T>
     void  prepareTopBuckets(STACK &st,
                             BUCKETS &buckets,
-                            const std::vector<sort_item<T>> &items,
-                            const sort_item<T> &minSortEl,
-                            const sort_item<T> &maxSortEl,
+                            std::vector<sort_item<T>> &items,
+                            sort_item<T> &minSortEl,
+                            sort_item<T> &maxSortEl,
                             int count) {
 
-        const float minLog = getLog(&minSortEl);
-        const float maxLog = getLog(&maxSortEl);
+        float minLog = getLog(&minSortEl);
+        float maxLog = getLog(&maxSortEl);
 
-        const std::tuple<float, float> params = GetLinearTransformParams(minLog, maxLog, 0, count - 1);
+        std::tuple<float, float> params = GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
-        const float a = std::get<0>(params);
-        const float b = std::get<1>(params);
+        float a = std::get<0>(params);
+        float b = std::get<1>(params);
 
         //pushing distinct items only
         for (auto & item : items) {
@@ -324,8 +324,8 @@ namespace bb_sort {
             }
         }
 
-        const sort_item minSortEl = distinctItems[distinctMap[minEl]];
-        const sort_item maxSortEl = distinctItems[distinctMap[maxEl]];
+        sort_item minSortEl = distinctItems[distinctMap[minEl]];
+        sort_item maxSortEl = distinctItems[distinctMap[maxEl]];
 
         prepareTopBuckets(st, buckets, distinctItems, minSortEl, maxSortEl, count);
     }

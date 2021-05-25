@@ -33,10 +33,12 @@ namespace pool {
     private:
 
         size_type              capacity = 0;
-        size_type              length = 0;
-        array_pointer          array = nullptr;
 
     public:
+
+        array_pointer          array = nullptr;
+        size_type              length = 0;
+
 
         vector(size_type size) :
                 capacity(0),

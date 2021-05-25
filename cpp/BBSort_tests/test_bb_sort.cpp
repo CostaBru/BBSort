@@ -226,26 +226,6 @@ void test_duplicate_reports(){
                 std::cout << "[" << "qsort       " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
-            std::vector<T> getSortedTest4(test);
-            std::vector<T> topDNSorted;
-            {
-                const auto start = std::chrono::high_resolution_clock::now();
-                topDNSorted = bb_sort_dictless::getTopSortedLazy(getSortedTest4, topN);
-                const auto stop = std::chrono::high_resolution_clock::now();
-                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "get top D  " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
-            }
-
-            std::vector<T> getSortedTest5(test);
-            std::vector<T> topDNSorted2;
-            {
-                const auto start = std::chrono::high_resolution_clock::now();
-                topDNSorted2 = bb_sort_dictless::getTopSortedLazy(getSortedTest5, topN2);
-                const auto stop = std::chrono::high_resolution_clock::now();
-                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "get top D" << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
-            }
-
             std::vector<T> bbSortDictless(test);
             {
                 const auto start = std::chrono::high_resolution_clock::now();
@@ -299,17 +279,6 @@ void test_duplicate_reports(){
 
                 if (!eq) {
                     std::cout << "Top N: Not eq" << i << " " << qsortTest[i] << "!=" << topNSorted2[i] << std::endl;
-                }
-
-                good = eq && good;
-            }
-
-            for (int i = 0; i < topN2; ++i) {
-
-                auto eq = qsortTest[i] == topDNSorted2[i];
-
-                if (!eq) {
-                    std::cout << "Top D N: Not eq" << i << " " << qsortTest[i] << "!=" << topDNSorted2[i] << std::endl;
                 }
 
                 good = eq && good;
@@ -399,26 +368,6 @@ void test_unique_reports(){
                 std::cout << "[" << "qsort       " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
-            std::vector<T> getSortedTest4(test);
-            std::vector<T> topDNSorted;
-            {
-                const auto start = std::chrono::high_resolution_clock::now();
-                topDNSorted = bb_sort_dictless::getTopSortedLazy(getSortedTest4, topN );
-                const auto stop = std::chrono::high_resolution_clock::now();
-                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "get top D  " << topN <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
-            }
-
-            std::vector<T> getSortedTest5(test);
-            std::vector<T> topDNSorted2;
-            {
-                const auto start = std::chrono::high_resolution_clock::now();
-                topDNSorted2 = bb_sort_dictless::getTopSortedLazy(getSortedTest5, topN2 );
-                const auto stop = std::chrono::high_resolution_clock::now();
-                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-                std::cout << "[" << "get top D" << topN2 <<  "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
-            }
-
             std::vector<T> bbSortDictless(test);
             {
                 const auto start = std::chrono::high_resolution_clock::now();
@@ -472,17 +421,6 @@ void test_unique_reports(){
 
                 if (!eq) {
                     std::cout << "Top N: Not eq" << i << " " << qsortTest[i] << "!=" << topNSorted2[i] << std::endl;
-                }
-
-                good = eq && good;
-            }
-
-            for (int i = 0; i < topN2; ++i) {
-
-                auto eq = qsortTest[i] == topDNSorted2[i];
-
-                if (!eq) {
-                    std::cout << "Top D N: Not eq" << i << " " << qsortTest[i] << "!=" << topDNSorted2[i] << std::endl;
                 }
 
                 good = eq && good;
