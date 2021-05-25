@@ -234,86 +234,63 @@ std::vector<T> sample(std::vector<T> population, long long count){
 </details>
 
 <details>
-		<summary> Full sort performance comparison tables </summary>
+		<summary> C++ Full sort performance comparison tables </summary>
 
 ``N``: 100 000, ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
 
-``uint8:``
+duplicates in set, bb sort counting impl,
 
-| case |    N  |    qsort (ns) |   bb sort (ns )   |
-|------|-------|---------------|------------------|
-|   1  | 1     |      2 000 100 |     1 005 000     |
-|   2  | 10    |    10  198 300 |   10  007 800     |
-|   3  | 100   |   170  365 800 |  133  798 500     |
-|   4  | 1000  |  1 727  540 500 | 1 331  475 000     |
-|   5  | 20000  | 32 975 382 500 | 26 625 005 800    |
-
-``long:``
+``int:``
 
 | case |    N  |    qsort (ns) |   bb sort (ns )|
 |------|-------|---------------|------------------|
-|   1  | 1     |     11 002 500 |    59 367600     |
-|   2  | 10    |     66 012 300 |    99 028900     |
-|   3  | 100   |    524 117 900 |   385 087200     |
-|   4  | 1000  |   5 092 121 800 |  3 051 038 300     |
-|   5  | 20000  | 100 116 390 900 | 60 191 307 100    |
-
+|   1  | 1     |     10 943 200 |    21 121 400    |
+|   2  | 10    |     69 736 500 |    58 756 600     |
+|   3  | 100   |    547 019 000 |   337 920 000     |
+|   4  | 1000  |   5 207 205 100 | 3 072 248 300     |
+ 
 ``double:``
 
 | case |    N  |    qsort (ns) |   bb sort (ns )|
 |------|-------|---------------|------------------|
-|   1  | 1     |    14 016 300 |      77 567 800     |
-|   2  | 10    |    84 019 200 |     255 961 100     |
-|   3  | 100   |   6 78 025 400 |    10 1873 800     |
-|   4  | 1000  |  65 38 606 100 |    8 978 723 200     |
-|   5  | 20000  | 131 266 887 200 | 184 922 020 300    |
+|   1  | 1     |    15 002 300 |     37 014 600     |
+|   2  | 10    |    83 578 600 |     162 684 300     |
+|   3  | 100   |   680 668 800 |     942 057 100     |
+|   4  | 1000  |  6 609 933 900 |  9 268 619 400     |
 
 </details>
 
 <details>
-		<summary> Get top N against full sort </summary>
+		<summary> C++ Get top N against full sort </summary>
 
 ``N``: 100 000, ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
 
-``uint8:``
+duplicates in set, bb sort dictless impl,
+
+``int:``
 
 | case |    N  |    qsort (ns)   |   get top 1 (ns ) |  get top 100 (ns )   |
 |------|-------|-----------------|-------------------|----------------------|
-|   1  | 1     |       2 000 100 |        998 400    |      1 001 200       |
-|   2  | 10    |      15 429 700 |     15 623 700    |     15 842 100       |
-|   3  | 100   |     168 221 100 |     84 196 800    |     89 441 700       |
-|   4  | 1000  |   1 643 511 700 |    854 106 500    |    851 551 200       |
-|   5  | 20000  | 33 109 880 400 | 17 291 026 300    | 17 173 233 500       |
-
-``long:``
-
-| case |    N  |    qsort (ns)   |   get top 1 (ns ) |  get top 100 (ns )   |
-|------|-------|-----------------|-------------------|----------------------|
-|   1  | 2     |      8 025 100  |      23 003 000    |    20 228 000       |
-|   2  | 12    |      68 566 300 |      42 277 400    |    51 449 300       |
-|   3  | 100   |     528 712 900 |     199 213 800    |   183 737 500       |
-|   4  | 1000  |   5 013 204 000 |   1 648 822 800    |  1 634 947 000      |
-|   5  | 20000  | 100 182 266 100 | 32 750 932 200    | 32 081 425 500      |
-
+|   1  | 1     |      10 943 200 |     10 774 800    |      10 396 400       |
+|   2  | 10    |      69 736 500 |     53 510 400    |      52 891 200       |
+|   3  | 100   |     547 019 000 |     462 951 700    |    447 414 400       |
+|   4  | 1000  |   5 207 205 100 |    4 460 983 800    | 4 401 571 700       |
 
 ``double:``
 
 | case |    N  |    qsort (ns)    |   get top 1 (ns ) |  get top 100 (ns )   |
 |------|-------|------------------|-------------------|----------------------|
-|   1  | 1     |       19 061 300 |     30 294 500    |     31 411 300       |
-|   2  | 10    |       866 948 00 |     71 614 500    |     70 455 700       |
-|   3  | 100   |      694 641 500 |    386 856 900    |    376 480 400       |
-|   4  | 1000  |    6 622 442 300 |  3 531 102 600    |  3 528 902 500       |
-|   5  | 20000  | 131 559 809 000 | 71 188 808 600    | 69 795 337 800       |
+|   1  | 1     |       10 451 100 |     10 690 400    |     10 836 300       |
+|   2  | 10    |       85 839 300 |     63 968 200    |     143 667 000       |
+|   3  | 100   |      687 395 000 |    531 726 000    |    532 256 200       |
+|   4  | 1000  |    6 733 593 800 |  5 100 721 600    |  5 092 541 900      |
 
 
 </details>
 
-From observation of result, I can conclude that the main bottleneck of new algorithm is space requirements. NLogN memory allocation is very expensive operation, and it the reason of the worst performance of current implementation.
+From observation of result, I supposed to conclude that the main bottleneck of new algorithm is space requirements. Unfortunately, c++ poolable version of data storage didn't help to overcome quick sort run time performance. To make it more practical, I hardcoded max bucket size (128) to gather 20-30% better run time for the get top 100 case.
 
-According to previous statement, we can consider reusable poolable vector data structure to make that algorithm more practical. 
-
-C# ``BB sort`` poolable implementation without counting duplicates has ``~20% better`` full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. Please note that it was slightly modified to work with list.
+C# ``BB sort`` poolable implementation without counting duplicates has up to ``30% better`` full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. The usage of array pool reduces GC calls which lead to up to 3 times better performance on large arrays.
 
 # Advantages
 

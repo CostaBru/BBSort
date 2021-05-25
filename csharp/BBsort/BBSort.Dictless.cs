@@ -15,10 +15,9 @@ namespace BBsort.DictLess
             m_getLog = getLog;
         }
 
-        public void Sort(List<T> array)
+        public void Sort(T[] array)
         {
-
-            if (array.Count <= 1)
+            if (array.Length <= 1)
             {
                 return;
             }
@@ -27,7 +26,7 @@ namespace BBsort.DictLess
 
             getTopStackBuckets(array, st);
 
-            bbSortToStream(st, array, array.Count);
+            bbSortToStream(st, array, array.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -73,78 +72,90 @@ namespace BBsort.DictLess
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
-        void fillStream(ref T val, List<T> output, int index, int count)
+        int case1(Stack<MinMaxHeap<T>> st,
+                  MinMaxHeap<T> top,
+                  T[] output,
+                  int index)
         {
-            for (int i = 0; i < count; ++i)
+            if (index < output.Length)
             {
+                output[index] = top.At(0);
+            }
 
+            return 1;
+        }
+        
+        int caseAllDuplicates(MinMaxHeap<T> top,
+            T[] output,
+            int index)
+        {
+            T val = top.At(0);
+            
+            for (int i = 0; i < top.Count && i < output.Length; ++i)
+            {
                 int newIndex = index + i;
-                if (newIndex >= output.Count)
+                if (newIndex >= output.Length)
                 {
                     break;
                 }
                 output[newIndex] = val;
             }
-        }
-
-        int case1(Stack<MinMaxHeap<T>> st,
-                  MinMaxHeap<T> top,
-                  List<T> output,
-                  int index)
-        {
-            fillStream(ref top.At(0), output, index, top.Count);
 
             return top.Count;
         }
 
         int case2(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      List<T> output,
+                      T[] output,
                       int index)
         {
-            var count0 = 1;
-            var count1 = 1;
+            if (index < output.Length)
+            {
+                output[index] = top.At(1);
+            }
+            
+            if (index + 1 < output.Length)
+            {
+                output[index + 1] = top.At(0);
+            }
 
-            fillStream(ref top.At(1), output, index, count0);
-            fillStream(ref top.At(0), output, index + count0, count1);
-
-            return count0 + count1;
+            return 2;
         }
 
         int case3(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      List<T> output,
+                      T[] output,
                       int index)
         {
-
             //single comparison
             var (maxIndex, midIndex, minIndex) = top.GetMaxMidMin();
 
-            var count1 = 1;
-            var count2 = 1;
-            var count3 = 1;
+            if (index < output.Length)
+            {
+                output[index] = top.At(minIndex);
+            }
+            
+            if (index + 1 < output.Length)
+            {
+                output[index + 1] = top.At(midIndex);
+            }
+            
+            if (index + 2 < output.Length)
+            {
+                output[index + 2] = top.At(maxIndex);
+            }
 
-            fillStream(ref top.At(minIndex), output, index, count1);
-            fillStream(ref top.At(midIndex), output, index + count1, count2);
-            fillStream(ref top.At(maxIndex), output, index + count1 + count2, count3);
-
-            var count = count1 + count2 + count3;
-
-            return count;
+            return 3;
         }
 
         int caseN(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      List<T> output,
+                      T[] output,
                       int index)
         {
-            var allDuplicates = EqualityComparer<T>.Default.Equals(top.At(0), top.At(1));
-
-            if (allDuplicates)
+            if (top.AllDuplicates)
             {
-                return case1(st, top, output, index);
+                return caseAllDuplicates(top, output, index);
             }
 
             var count = (top.Count / 2) + 1;
@@ -165,9 +176,9 @@ namespace BBsort.DictLess
             return 0;
         }
 
-        void bbSortToStream(Stack<MinMaxHeap<T>> st, List<T> output, int count)
+        void bbSortToStream(Stack<MinMaxHeap<T>> st, T[] output, int count)
         {
-            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>, List<T>, int, int>[] { case1, case2, case3, caseN };
+            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>,  T[], int, int>[] { case1, case2, case3, caseN };
 
             int index = 0;
 
@@ -181,13 +192,13 @@ namespace BBsort.DictLess
             }
         }
 
-        void getTopStackBuckets(List<T> array,
+        void getTopStackBuckets(T[] array,
                                 Stack<MinMaxHeap<T>> st)
         {
 
-            MinMaxHeap<T> items = new MinMaxHeap<T>(new PoolList<T>(array.Count, 4));
+            MinMaxHeap<T> items = new MinMaxHeap<T>(new PoolList<T>(array.Length, 4));
 
-            for (var index = 0; index < array.Count; index++)
+            for (var index = 0; index < array.Length; index++)
             {
                 items.Add(array[index]);
             }

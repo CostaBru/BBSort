@@ -103,15 +103,14 @@ namespace BBSortReports
 
                 foreach (var test in tests)
                 {
-
                     Print(caseNumber.ToString());
 
                     Shuffle(rand, test);
 
-                    var bbsortDictlessTest = new List<T>(test);
+                    var bbsortDictlessTest = new T[test.Count];
+                    test.CopyTo(bbsortDictlessTest, 0);
 
                     {
-                        
                         clock.Reset();
 
                         clock.Start();
@@ -125,11 +124,11 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[bb_sort_dictless] {ms}ms size: {bbsortDictlessTest.Count}");
+                        Print($"[bb_sort_dictless] {ms}ms size: {bbsortDictlessTest.Length}");
                     }
                     
-                    var bbsortCountingTest = new List<T>(test);
-
+                    var bbsortCountingTest = new T[test.Count];
+                    test.CopyTo(bbsortCountingTest, 0);
                     {
                         
                         
@@ -146,11 +145,11 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[bb_sort_counting] {ms}ms size: {bbsortCountingTest.Count}");
+                        Print($"[bb_sort_counting] {ms}ms size: {bbsortCountingTest.Length}");
                     }
 
-                    var qsortTest = new List<T>(test);
-
+                    var qsortTest = new T[test.Count];
+                    test.CopyTo(qsortTest, 0);
                     {
                         
                         clock.Reset();
@@ -166,13 +165,13 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[qsort           ] {ms}ms size: {bbsortCountingTest.Count}");
+                        Print($"[qsort           ] {ms}ms size: {bbsortCountingTest.Length}");
                     }
 
 
-                    bool good = qsortTest.Count == bbsortCountingTest.Count;
+                    bool good = qsortTest.Length == bbsortCountingTest.Length;
 
-                    for (int j = 0; j < qsortTest.Count; ++j)
+                    for (int j = 0; j < qsortTest.Length; ++j)
                     {
                         var eq = EqualityComparer<T>.Default.Equals(qsortTest[j], bbsortCountingTest[j]);
 
@@ -230,8 +229,8 @@ namespace BBSortReports
 
                     Shuffle(rand, test);
 
-                    var bbsortDictlessTest = new List<T>(test);
-
+                    var bbsortDictlessTest = new T[test.Count];
+                    test.CopyTo(bbsortDictlessTest, 0);
                     {
 
                         clock.Reset();
@@ -247,11 +246,12 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[bb_sort_dictless] {ms}ms size: {bbsortDictlessTest.Count}");
+                        Print($"[bb_sort_dictless] {ms}ms size: {bbsortDictlessTest.Length}");
                     }
                     
-                    var bbsortCountingTest = new List<T>(test);
-
+                    var bbsortCountingTest = new T[test.Count];
+                    test.CopyTo(bbsortCountingTest, 0);
+                    
                     {
 
                         clock.Reset();
@@ -267,10 +267,11 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[bb_sort_counting] {ms}ms size: {bbsortCountingTest.Count}");
+                        Print($"[bb_sort_counting] {ms}ms size: {bbsortCountingTest.Length}");
                     }
 
-                    var qsortTest = new List<T>(test);
+                    var qsortTest = new T[test.Count];
+                    test.CopyTo(qsortTest, 0);
 
                     {
 
@@ -287,13 +288,13 @@ namespace BBSortReports
 
                         var ms = clock.ElapsedMilliseconds;
 
-                        Print($"[qsort           ] {ms}ms size: {bbsortCountingTest.Count}");
+                        Print($"[qsort           ] {ms}ms size: {bbsortCountingTest.Length}");
                     }
 
 
-                    bool good = qsortTest.Count == bbsortCountingTest.Count;
+                    bool good = qsortTest.Length == bbsortCountingTest.Length;
 
-                    for (int j = 0; j < qsortTest.Count; ++j)
+                    for (int j = 0; j < qsortTest.Length; ++j)
                     {
                         var eq = EqualityComparer<T>.Default.Equals(qsortTest[j], bbsortCountingTest[j]);
 

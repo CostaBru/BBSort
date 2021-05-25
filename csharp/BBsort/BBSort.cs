@@ -66,10 +66,10 @@ namespace BBsort.Counting
             m_getLog = getLog;
         }
 
-        public void Sort(List<T> array)
+        public void Sort(T[] array)
         {
 
-            if (array.Count <= 1)
+            if (array.Length <= 1)
             {
                 return;
             }
@@ -79,7 +79,7 @@ namespace BBsort.Counting
 
             getTopStackBuckets(array, st, countMap);
 
-            bbSortToStream(st, array, array.Count, countMap);
+            bbSortToStream(st, array, array.Length, countMap);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -128,13 +128,12 @@ namespace BBsort.Counting
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
-        void fillStream(ref T val, List<T> output, int index, int count)
+        void fillStream(ref T val, T[] output, int index, int count)
         {
-            for (int i = 0; i < count; ++i)
+            for (int i = 0; i < count && i < output.Length; ++i)
             {
-
                 int newIndex = index + i;
-                if (newIndex >= output.Count)
+                if (newIndex >= output.Length)
                 {
                     break;
                 }
@@ -144,7 +143,7 @@ namespace BBsort.Counting
 
         int case1(Stack<MinMaxHeap<T>> st,
                   MinMaxHeap<T> top,
-                  List<T> output,
+                  T[] output,
                   Dictionary<T, int> countMap,
                   int index)
         {
@@ -155,7 +154,7 @@ namespace BBsort.Counting
 
         int case2(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      List<T> output,
+                      T[] output,
                       Dictionary<T, int> countMap,
                       int index)
         {
@@ -170,7 +169,7 @@ namespace BBsort.Counting
 
         int case3(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      List<T> output,
+                      T[] output,
                       Dictionary<T, int> countMap,
                       int index)
         {
@@ -193,7 +192,7 @@ namespace BBsort.Counting
 
         int caseN(Stack<MinMaxHeap<T>> st,
                       MinMaxHeap<T> top,
-                      List<T> output,
+                      T[] output,
                       Dictionary<T, int> countMap,
                       int index)
         {
@@ -216,9 +215,9 @@ namespace BBsort.Counting
             return 0;
         }
 
-        void bbSortToStream(Stack<MinMaxHeap<T>> st, List<T> output, int count, Dictionary<T, int> countMap)
+        void bbSortToStream(Stack<MinMaxHeap<T>> st, T[] output, int count, Dictionary<T, int> countMap)
         {
-            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>, List<T>, Dictionary<T, int>, int, int>[] { case1, case2, case3, caseN };
+            var caseFunc = new Func<Stack<MinMaxHeap<T>>, MinMaxHeap<T>, T[], Dictionary<T, int>, int, int>[] { case1, case2, case3, caseN };
 
             int index = 0;
 
@@ -231,14 +230,14 @@ namespace BBsort.Counting
             }
         }
 
-        void getTopStackBuckets(List<T> array,
+        void getTopStackBuckets(T[] array,
                                 Stack<MinMaxHeap<T>> st,
                                 Dictionary<T, int> countMap)
         {
 
-            MinMaxHeap<T> distinctItems = new MinMaxHeap<T>(new PoolList<T>(array.Count, 4));
+            MinMaxHeap<T> distinctItems = new MinMaxHeap<T>(new PoolList<T>(array.Length, 4));
 
-            for (var index = 0; index < array.Count; index++)
+            for (var index = 0; index < array.Length; index++)
             {
                 if (countMap.ContainsKey(array[index]))
                 {

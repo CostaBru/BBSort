@@ -43,7 +43,7 @@ namespace Flexols.Data.Collections
         **/
         public int Count
         {
-            get => heap_.Count;
+            get => heap_.m_size;
         }
 
 
@@ -56,7 +56,7 @@ namespace Flexols.Data.Collections
             heap_.Add(zvalue);
 
             // Reorder the heap so that the min-max heap property holds true
-            trickleUp(heap_.Count - 1);
+            trickleUp(heap_.m_size - 1);
         }
 
         /**
@@ -80,10 +80,11 @@ namespace Flexols.Data.Collections
             return ref heap_.ValueByRef(findMinIndex());
         }
 
+        public bool AllDuplicates => comparer_.Compare(heap_.m_items[0], heap_.m_items[1]) == 0;
 
         public (int, int, int) GetMaxMidMin()
         {
-            if (comparer_.Compare(heap_.ValueByRef(1), heap_.ValueByRef(2)) == -1)
+            if (comparer_.Compare(heap_.m_items[1], heap_.m_items[2]) == -1)
             {
                 return (0, 2, 1);
             }
@@ -92,7 +93,7 @@ namespace Flexols.Data.Collections
 
         public ref T At(int index)
         {
-            return ref heap_.ValueByRef(index);
+            return ref heap_.m_items[index];
         }
 
         public IEnumerator<T> GetEnumerator()
@@ -192,9 +193,9 @@ namespace Flexols.Data.Collections
             zindex_grandparent = (zindex_grandparent - 1) / 2;
 
             // Check to see if we should swap with the grandparent
-            if ((comparer_.Compare(heap_.ValueByRef(zindex), heap_.ValueByRef(zindex_grandparent)) ^ (MaxLevel ? 1 : 0)) == -1)
+            if ((comparer_.Compare(heap_.m_items[zindex], heap_.m_items[zindex_grandparent]) ^ (MaxLevel ? 1 : 0)) == -1)
             {
-                Swap(ref heap_.ValueByRef(zindex_grandparent), ref heap_.ValueByRef(zindex));
+                Swap(ref heap_.m_items[zindex_grandparent], ref heap_.m_items[zindex]);
                 trickleUp_(zindex_grandparent, MaxLevel);
             }
         }
@@ -221,9 +222,9 @@ namespace Flexols.Data.Collections
             if (isOnMinLevel(zindex))
             {
                 // Check to see if we should swap with the parent
-                if (comparer_.Compare(heap_.ValueByRef(zindex_parent), heap_.ValueByRef(zindex)) == -1)
+                if (comparer_.Compare(heap_.m_items[zindex_parent], heap_.m_items[zindex]) == -1)
                 {
-                    Swap(ref heap_.ValueByRef(zindex_parent), ref heap_.ValueByRef(zindex));
+                    Swap(ref heap_.m_items[zindex_parent], ref heap_.m_items[zindex]);
                     trickleUp_(zindex_parent, true);
                 }
                 else
@@ -234,9 +235,9 @@ namespace Flexols.Data.Collections
             else
             {
                 // Check to see if we should swap with the parent
-                if (comparer_.Compare(heap_.ValueByRef(zindex), heap_.ValueByRef(zindex_parent)) == -1)
+                if (comparer_.Compare(heap_.m_items[zindex], heap_.m_items[zindex_parent]) == -1)
                 {
-                    Swap(ref heap_.ValueByRef(zindex_parent), ref heap_.ValueByRef(zindex));
+                    Swap(ref heap_.m_items[zindex_parent], ref heap_.m_items[zindex]);
                     trickleUp_(zindex_parent, false);
                 }
                 else
@@ -267,7 +268,7 @@ namespace Flexols.Data.Collections
              * equals true. */
 
             // Ensure the element exists.
-            if (zindex >= heap_.Count)
+            if (zindex >= heap_.m_size)
                 throw new InvalidOperationException("Element specified by zindex does not exist");
 
             /* This will hold the index of the smallest node among the children,
@@ -279,17 +280,17 @@ namespace Flexols.Data.Collections
             int left = leftChild(zindex);
 
             // Check the left and right child
-            if (left < heap_.Count && (comparer_.Compare(heap_.ValueByRef(left), heap_.ValueByRef(smallestNode)) ^ (MaxLevel ? 1 : 0)) == -1)
+            if (left < heap_.m_size && (comparer_.Compare(heap_.m_items[left], heap_.m_items[smallestNode]) ^ (MaxLevel ? 1 : 0)) == -1)
                 smallestNode = left;
-            if (left + 1 < heap_.Count && (comparer_.Compare(heap_.ValueByRef(left + 1), heap_.ValueByRef(smallestNode)) ^ (MaxLevel ? 1 : 0)) == -1)
+            if (left + 1 < heap_.m_size && (comparer_.Compare(heap_.m_items[left + 1], heap_.m_items[smallestNode]) ^ (MaxLevel ? 1 : 0)) == -1)
                 smallestNode = left + 1;
 
             /* Check the grandchildren which are guarenteed to be in consecutive
              * positions in memory. */
             int leftGrandchild = leftChild(left);
-            var heapCount = heap_.Count;
+            var heapCount = heap_.m_size;
             for (int i = 0; i < 4 && leftGrandchild + i < heapCount; ++i)
-                if ((comparer_.Compare(heap_.ValueByRef(leftGrandchild + i), heap_.ValueByRef(smallestNode)) ^ (MaxLevel ? 1 : 0)) == -1)
+                if ((comparer_.Compare(heap_.m_items[leftGrandchild + i], heap_.m_items[smallestNode]) ^ (MaxLevel ? 1 : 0)) == -1)
                     smallestNode = leftGrandchild + i;
 
             // The current node was the smallest node, don't do anything.
@@ -297,7 +298,7 @@ namespace Flexols.Data.Collections
 
 
             // Swap the current node with the smallest node
-            Swap(ref heap_.ValueByRef(zindex), ref heap_.ValueByRef(smallestNode));
+            Swap(ref heap_.m_items[zindex], ref heap_.m_items[smallestNode]);
 
             // If the smallest node was a grandchild...
             if (smallestNode - left > 1)
@@ -306,8 +307,8 @@ namespace Flexols.Data.Collections
                 //var parentIndex = parent(smallestNode);
                 var parentIndex = (smallestNode - 1) / 2;
                 
-                if ((comparer_.Compare(heap_.ValueByRef(parentIndex), heap_.ValueByRef(smallestNode)) ^ (MaxLevel ? 1 : 0)) == -1)
-                    Swap(ref heap_.ValueByRef(parentIndex), ref heap_.ValueByRef(smallestNode));
+                if ((comparer_.Compare(heap_.m_items[parentIndex], heap_.m_items[smallestNode]) ^ (MaxLevel ? 1 : 0)) == -1)
+                    Swap(ref heap_.m_items[parentIndex], ref heap_.m_items[smallestNode]);
 
                 trickleDown_(smallestNode, MaxLevel);
             }
@@ -353,7 +354,7 @@ namespace Flexols.Data.Collections
                 default:
                     /* There are three or more elements in the heap, return the
                      * smallest child */
-                    return (comparer_.Compare(heap_.ValueByRef(1), heap_.ValueByRef(2))) == -1 ? 1 : 2;
+                    return (comparer_.Compare(heap_.m_items[1], heap_.m_items[2])) == -1 ? 1 : 2;
             }
         }       
     }
