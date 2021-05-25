@@ -160,7 +160,7 @@ namespace BBsort.DictLess
 
             int index = 0;
 
-            while (st.Count > 0 && index < count)
+            while (st.Count > 0)
             {
                 var top = st.Pop();
                 
@@ -203,7 +203,7 @@ namespace BBsort.DictLess
 
             var (a, b) = GetLinearTransformParams(minLog, maxLog, 0, bucketCount - 1);
 
-            for(int i = 0; i < bucketCount && i < array.Length; i++)
+            for(int i = 0; i < array.Length; i++)
             {
                 // ApplyLinearTransform
                 int index = (int)((a * m_getLog(array[i]) + b));

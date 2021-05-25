@@ -80,6 +80,24 @@ namespace pool {
             }
         }
 
+        bool  hasBack() {
+
+            if (lazyInit) {
+                return length > 0 && initFlags[length - 1];
+            }
+
+            return length > 0;
+        }
+
+        reference  back() {
+
+            if (lazyInit && !initFlags[length - 1]) {
+                initBack(length - 1);
+            }
+
+            return array[length - 1];
+        }
+
         vector_lazy &operator=(vector_lazy const &copy) {
 
             copyAssign<T>(copy);
@@ -252,10 +270,27 @@ namespace pool {
             }
         }
 
+        template<typename... Args>
+        void emplace_back(Args&&... args) {
+
+            resizeIfRequire();
+            emplaceBackInternal(std::move(args)...);
+
+            if (lazyInit) {
+
+                initFlags.resize(length);
+                initFlags[length - 1] = true;
+            }
+        }
+
         void pop_back() {
 
             --length;
-            array[length].~T();
+
+            if (!lazyInit || initFlags[length]) {
+
+                array[length].~T();
+            }
         }
 
         void clear() {
@@ -333,6 +368,13 @@ namespace pool {
         void moveBackInternal(T &&value) {
 
             new(array + length) T(std::move(value));
+            ++length;
+        }
+
+        template<typename... Args>
+        void emplaceBackInternal(Args&&... args) {
+
+            new(array + length) T(std::move(args)...);
             ++length;
         }
 

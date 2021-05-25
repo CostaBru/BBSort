@@ -3,7 +3,7 @@
 
 #define BUCKET_D minmax::min_max_heap<T, pool::vector<T>>
 
-#define STACK_D pool::vector<BUCKET_D>
+#define STACK_D pool::vector_lazy<BUCKET_D>
 
 #define BUCKETS_D pool::vector_lazy<BUCKET_D>
 
@@ -20,7 +20,7 @@
 namespace bb_sort_dictless {
 
     template<typename T>
-    void getBuckets(BUCKET_D & iterable, BUCKETS_D & buckets, int count) {
+    void getBuckets(BUCKET_D & iterable, STACK_D & buckets, int count) {
 
         float minLog = bb_sort::getLog(iterable.findMin());
         float maxLog = bb_sort::getLog(iterable.findMax());
@@ -31,10 +31,11 @@ namespace bb_sort_dictless {
         float b = std::get<1>(params);
 
         for(int i = 0; i < iterable.size(); ++i) {
+
             // ApplyLinearTransform
             int index = ((a * bb_sort::getLog(iterable.At(i)) + b));
             index = std::min(count - 1, index);
-            buckets[index].emplace(iterable.At(i));
+            buckets[index].push(iterable.At(i));
         }
     }
 
@@ -148,20 +149,26 @@ namespace bb_sort_dictless {
 
         while (!st.empty()) {
 
-            const auto caseIndex = std::min(st.back().size() - 1, 3U);
-            const auto switchCaseFunc = func_array<int(
-                    STACK_D &,
-                    BUCKET_D &,
-                    std::vector<T> &,
-                    int)>
-            ::switchCase[caseIndex];
+            if (st.hasBack()) {
 
-            index += switchCaseFunc(st, st.back(), output, index);
+                const auto caseIndex = std::min(st.back().size() - 1, 3U);
+                const auto switchCaseFunc = func_array<int(
+                        STACK_D &,
+                        BUCKET_D &,
+                        std::vector<T> &,
+                        int)>
+                ::switchCase[caseIndex];
+
+                index += switchCaseFunc(st, st.back(), output, index);
+            } else {
+
+                st.pop_back();
+            }
         }
     }
 
     template<typename T>
-    void getTopStackBuckets(std::vector<T> & array, STACK_D & st) {
+    void getTopStackBuckets(std::vector<T> & array, STACK_D & st, int count) {
 
         T min = array[0];
         T max = array[0];
@@ -177,16 +184,7 @@ namespace bb_sort_dictless {
             return;
         }
 
-        int count = array.size();
-
-        count = std::min(count, 128);
-
-        BUCKETS_D newBuckets(count);
-
-        const float minLog = bb_sort::getLog(min);
-        const float maxLog = bb_sort::getLog(max);
-
-        const std::tuple<float, float> params = bb_sort::GetLinearTransformParams(minLog, maxLog, 0, count - 1);
+        const std::tuple<float, float> params = bb_sort::GetLinearTransformParams(bb_sort::getLog(min), bb_sort::getLog(max), 0, count - 1);
 
         const float a = std::get<0>(params);
         const float b = std::get<1>(params);
@@ -195,16 +193,8 @@ namespace bb_sort_dictless {
 
             // ApplyLinearTransform
             int index = ((a * bb_sort::getLog(array[i]) + b));
-            index = std::min(count - 1, index);
-            newBuckets[index].emplace(array[i]);
-        }
-
-        for (int i = count - 1; i >= 0; --i) {
-
-            if (newBuckets.hasValue(i)) {
-
-                st.emplace_back(std::move(newBuckets[i]));
-            }
+            int stackIndex = count - std::min(count - 1, index) - 1;
+            st[stackIndex].push(array[i]);
         }
     }
 
@@ -218,9 +208,13 @@ namespace bb_sort_dictless {
             return;
         }
 
-        STACK_D st;
+        int count = array.size();
 
-        getTopStackBuckets(array, st);
+        count = std::min(count, 128);
+
+        STACK_D st(count);
+
+        getTopStackBuckets(array, st, count);
 
         bbSortToStream<T>(st, array, size);
     }
