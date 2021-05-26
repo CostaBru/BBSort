@@ -288,9 +288,9 @@ duplicates in set, bb sort dictless impl,
 
 </details>
 
-From observation of result, I supposed to conclude that the main bottleneck of new algorithm is space requirements. Unfortunately, c++ poolable version of data storage didn't help to overcome quick sort run time performance. To make it more practical, I hardcoded max bucket size (128) to gather 20-30% better run time for the get top 100 case.
+From observation of result, I supposed to conclude that the main bottleneck of new algorithm is space requirements. Unfortunately, c++ poolable version of data storage overcame quick sort run time performance only in debug mode. To make it more practical, I hardcoded max bucket size (128) to gather 10-20% better run time for non counting case.
 
-C# ``BB sort`` poolable implementation without counting duplicates has up to ``30% better`` full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. The usage of array pool reduces GC calls which lead to up to 3 times better performance on large arrays.
+C# ``BB sort`` poolable implementation without counting duplicates has up to ``20% better`` full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. The usage of array pool reduces GC calls which lead to up to 3 times better performance on large arrays.
 
 # Advantages
 
