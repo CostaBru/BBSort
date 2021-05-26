@@ -296,7 +296,7 @@ C# ``BB sort`` poolable implementation without counting duplicates has up to ``2
 
 ``BB sort`` can be used in lazy way. The output may be considered as a stream, iterator, or pipeline for next operation.
 
-Task like ``take M sorted items from N given unsorted items`` is good for ``BB sorting``. In that case first sorted item will be available in just ``O(2N)``.
+Task like ``take M sorted items from N given unsorted items`` is good for ``BB sorting``. In that case first sorted item will be available in just ``O(2N)``. On the other hand, the heap data structure or quick select algorithm can be used to solve this kind of task more effectively.
 
 Hence, we have copy of array in buckets and count map, we can use source array as output as well.
 
