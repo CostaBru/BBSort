@@ -41,7 +41,7 @@ namespace minmax
  * @brief An implementation of the Min-Max Heap.
  *
  * @tparam T         The type of element stored in the heap.
- * @tparam Container The type fo container used to store the heap. Must support
+ * @tparam Container The type fo Storage used to store the heap. Must support
  *                   random access and be stl compliant.
  * @tparam Compare   The comparison function class that will be used to
  *                   determine the ordering of the heap.
@@ -53,7 +53,7 @@ namespace minmax
         //min_max_heap& operator=(const min_max_heap& that) = delete;
 
         /**
-         * @brief The container that is used to store the heap.
+         * @brief The Storage that is used to store the heap.
          **/
         Container heap_;
 

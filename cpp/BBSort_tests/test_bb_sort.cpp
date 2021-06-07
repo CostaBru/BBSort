@@ -3,6 +3,7 @@
 #include <bb_sort.h>
 #include <bb_sort_get_top_n_lazy.h>
 #include <bb_sort_dictless.h>
+#include <bb_sort_dictless_min_max_vect.h>
 #include <min_max_heap.h>
 #include <vector>
 #include <random>
@@ -36,14 +37,19 @@ void sort_and_test(std::vector<T> arr){
     std::vector<T> arrCopy2(arr);
     std::reverse(arrCopy2.begin(), arrCopy2.end());
 
+    std::vector<T> arrCopy3(arr);
+    std::reverse(arrCopy3.begin(), arrCopy3.end());
+
     std::vector<T> goldenArr(arr);
     sort(goldenArr.begin(), goldenArr.end());
 
     bb_sort::sort(arrCopy);
     bb_sort_dictless::sort(arrCopy2);
+    bb_sort_dictless_min_max_vect::sort(arrCopy3);
 
     test_arrays<T>(arrCopy, goldenArr);
     test_arrays<T>(arrCopy2, goldenArr);
+    test_arrays<T>(arrCopy3, goldenArr);
 }
 
 void test_bucket_worst_1() {
@@ -235,6 +241,15 @@ void test_duplicate_reports(){
                 std::cout << "[" << "bb_sort d   " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
+            std::vector<T> bbSortDictlessMinMax(test);
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                bb_sort_dictless_min_max_vect::sort(bbSortDictlessMinMax );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "bb_sort d mm" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
             {
                 const auto start = std::chrono::high_resolution_clock::now();
 
@@ -268,6 +283,17 @@ void test_duplicate_reports(){
 
                 if (!eq) {
                     std::cout << "Not eq D " << i << " " << qsortTest[i] << "!=" << bbSortDictless[i] << std::endl;
+                }
+
+                good = eq && good;
+            }
+
+            for (int i = 0; i < qsortTest.size(); ++i) {
+
+                auto eq = qsortTest[i] == bbSortDictlessMinMax[i];
+
+                if (!eq) {
+                    std::cout << "Not eq D MM " << i << " " << qsortTest[i] << "!=" << bbSortDictlessMinMax[i] << std::endl;
                 }
 
                 good = eq && good;
@@ -377,6 +403,15 @@ void test_unique_reports(){
                 std::cout << "[" << "bb_sort d   " << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
             }
 
+            std::vector<T> bbSortDictlessMinMax(test);
+            {
+                const auto start = std::chrono::high_resolution_clock::now();
+                bb_sort_dictless_min_max_vect::sort(bbSortDictlessMinMax );
+                const auto stop = std::chrono::high_resolution_clock::now();
+                const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+                std::cout << "[" << "bb_sort d mm" << "] " << ns.count() << " ns" << " size: " << test.size() << std::endl;
+            }
+
             {
                 const auto start = std::chrono::high_resolution_clock::now();
 
@@ -410,6 +445,17 @@ void test_unique_reports(){
 
                 if (!eq) {
                     std::cout << "Not eq D" << i << " " << qsortTest[i] << "!=" << bbSortDictless[i] << std::endl;
+                }
+
+                good = eq && good;
+            }
+
+            for (int i = 0; i < qsortTest.size(); ++i) {
+
+                auto eq = qsortTest[i] == bbSortDictlessMinMax[i];
+
+                if (!eq) {
+                    std::cout << "Not eq D MM " << i << " " << qsortTest[i] << "!=" << bbSortDictlessMinMax[i] << std::endl;
                 }
 
                 good = eq && good;
