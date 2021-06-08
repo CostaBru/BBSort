@@ -75,7 +75,7 @@ namespace BBSortReports
             System.Console.WriteLine(message);
         }
 
-        static void test_duplicate_reports<T>(Func<T, float> getLog) where T : IComparable
+        static void test_duplicate_reports<T>(Func<T, float> getLog)  where T : struct, IComparable,  IComparable<T>
         {
             Print("test_duplicate_reports " + typeof(T).Name);
 
@@ -124,7 +124,7 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[bb_sort_dictless] {ms}ms size: {bbsortDictlessTest.Length}");
+                        Print($"[bb_sort_dictless   ] {ms}ms size: {bbsortDictlessTest.Length}");
                     }
                     
                     var bbsortCountingTest = new T[test.Count];
@@ -145,13 +145,31 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[bb_sort_counting] {ms}ms size: {bbsortCountingTest.Length}");
+                        Print($"[bb_sort_counting  ] {ms}ms size: {bbsortCountingTest.Length}");
+                    }
+                    
+                    var bbsortDictlessMMTest = new T[test.Count];
+                    test.CopyTo(bbsortDictlessMMTest, 0);
+                    {
+
+                        clock.Reset();
+
+                        clock.Start();
+
+                        var bbSort = new BBsort.DictLess.MinMaxList.BBSort<T>(getLog);
+
+                        bbSort.Sort(bbsortDictlessMMTest);
+
+                        clock.Stop();
+
+                        var ms = clock.ElapsedMilliseconds;
+
+                        Print($"[bb_sort_dictless mm] {ms}ms size: {bbsortDictlessTest.Length}");
                     }
 
                     var qsortTest = new T[test.Count];
                     test.CopyTo(qsortTest, 0);
                     {
-                        
                         clock.Reset();
 
                         clock.Start();
@@ -165,7 +183,7 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[qsort           ] {ms}ms size: {bbsortCountingTest.Length}");
+                        Print($"[qsort              ] {ms}ms size: {bbsortCountingTest.Length}");
                     }
 
 
@@ -194,6 +212,18 @@ namespace BBSortReports
 
                         good = eq && good;
                     }
+                    
+                    for (int j = 0; j < qsortTest.Length; ++j)
+                    {
+                        var eq = EqualityComparer<T>.Default.Equals(qsortTest[j], bbsortDictlessTest[j]);
+
+                        if (!eq)
+                        {
+                            Print($"Not eq MM {j} {qsortTest[j]} != {bbsortDictlessMMTest[j]}");
+                        }
+
+                        good = eq && good;
+                    }
 
                     if (!good)
                     {
@@ -210,7 +240,7 @@ namespace BBSortReports
             }
         }
         
-          static void test_unique_reports<T>(Func<T, float> getLog) where T : IComparable
+        static void test_unique_reports<T>(Func<T, float> getLog) where T : struct, IComparable,  IComparable<T>
         {
             Print("test_unique_reports " + typeof(T).Name);
 
@@ -258,7 +288,7 @@ namespace BBSortReports
                         var ms = clock.ElapsedMilliseconds;
                         
 
-                        Print($"[bb_sort_dictless] {ms}ms size: {bbsortDictlessTest.Length}");
+                        Print($"[bb_sort_dictless   ] {ms}ms size: {bbsortDictlessTest.Length}");
                     }
                     
                     var bbsortCountingTest = new T[test.Count];
@@ -277,9 +307,27 @@ namespace BBSortReports
                         clock.Stop();
 
                         var ms = clock.ElapsedMilliseconds;
-                        
 
-                        Print($"[bb_sort_counting] {ms}ms size: {bbsortCountingTest.Length}");
+                        Print($"[bb_sort_counting   ] {ms}ms size: {bbsortCountingTest.Length}");
+                    }
+                    
+                    var bbsortDictlessMMTest = new T[test.Count];
+                    test.CopyTo(bbsortDictlessMMTest, 0);
+                    {
+
+                        clock.Reset();
+
+                        clock.Start();
+
+                        var bbSort = new BBsort.DictLess.MinMaxList.BBSort<T>(getLog);
+
+                        bbSort.Sort(bbsortDictlessMMTest);
+
+                        clock.Stop();
+
+                        var ms = clock.ElapsedMilliseconds;
+
+                        Print($"[bb_sort_dictless mm] {ms}ms size: {bbsortDictlessTest.Length}");
                     }
 
                     var qsortTest = new T[test.Count];
@@ -300,7 +348,7 @@ namespace BBSortReports
 
                         var ms = clock.ElapsedMilliseconds;
 
-                        Print($"[qsort           ] {ms}ms size: {bbsortCountingTest.Length}");
+                        Print($"[qsort              ] {ms}ms size: {bbsortCountingTest.Length}");
                     }
 
 
@@ -325,6 +373,18 @@ namespace BBSortReports
                         if (!eq)
                         {
                             Print($"Not eq  D {j} {qsortTest[j]} != {bbsortDictlessTest[j]}");
+                        }
+
+                        good = eq && good;
+                    }
+                    
+                    for (int j = 0; j < qsortTest.Length; ++j)
+                    {
+                        var eq = EqualityComparer<T>.Default.Equals(qsortTest[j], bbsortDictlessMMTest[j]);
+
+                        if (!eq)
+                        {
+                            Print($"Not eq  mm {j} {qsortTest[j]} != {bbsortDictlessMMTest[j]}");
                         }
 
                         good = eq && good;
