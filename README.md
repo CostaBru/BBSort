@@ -169,18 +169,18 @@ Another good point of having min\max heap as bucket container: it allows us to h
 	
 </details>
 
+Performance profiling shows that building that heap is very expensive, so we can use custom vector that keeps track of min, max values.
+
+We can preserve size equals 3 case by adding mid field and handle that special case.
 
 # Performance 
 
 C++20 implementation of BB sort was compared to QSort rand algorithm taken from the Rosettacode code base website.
 
 Minor optimizations added to algorithm:
-- MinMax heap used as bucket storage.
-- Instead of generation N buckets we create N/2.
-
-Having that, BB sort shows the better performance starting N > 10 million for testing dataset generated below. 
-
-Please note that those data sets generated have duplicates.
+- MinMaxMid vector used as bucket storage.
+- Instead of generation N buckets we create N/2 + 1.
+- First level of buckets has 128 items only.
 
 <details>
 		<summary> Test data generation </summary>
@@ -236,61 +236,41 @@ std::vector<T> sample(std::vector<T> population, long long count){
 <details>
 		<summary> C++ Full sort performance comparison tables </summary>
 
-``N``: 100 000, ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
+ ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
 
-duplicates in set, bb sort counting impl,
 
 ``int:``
 
-| case |    N  |    qsort (ns) |   bb sort (ns )|
-|------|-------|---------------|------------------|
-|   1  | 1     |     10 943 200 |    21 121 400    |
-|   2  | 10    |     69 736 500 |    58 756 600     |
-|   3  | 100   |    547 019 000 |   337 920 000     |
-|   4  | 1000  |   5 207 205 100 | 3 072 248 300     |
+| case |    N         |    qsort (ns) |   bb sort (ns )  |
+|------|--------------|---------------|------------------|
+|   1  |     200 000  |     15 625 700 |    15 625 900   |
+|   2  |   1 200 000  |     62 519 700 |    41 278 700   |
+|   3  |  10 200 000  |    532 424 800 |   341 380 000   |
+|   4  | 100 200 000  |  5 124 005 200 | 3 523 796 800   |
  
 ``double:``
 
-| case |    N  |    qsort (ns) |   bb sort (ns )|
-|------|-------|---------------|------------------|
-|   1  | 1     |    15 002 300 |     37 014 600     |
-|   2  | 10    |    83 578 600 |     162 684 300     |
-|   3  | 100   |   680 668 800 |     942 057 100     |
-|   4  | 1000  |  6 609 933 900 |  9 268 619 400     |
+| case |    N         |    qsort (ns) |      bb sort (ns )   |
+|------|--------------|---------------|----------------------|
+|   1  | 200 000      |     15 623 500 |      15 627 100     |
+|   2  | 1 200 000    |     78 132 400 |      46 868 700     |
+|   3  | 10 200 000   |    689 186 500 |     385 274 200     |
+|   4  | 100 200 000  |  6 499 938 500 |   4 333 235 300     |
+
+``float:``
+
+| case |    N         |    qsort (ns)  |      bb sort (ns )   |
+|------|--------------|----------------|----------------------|
+|   1  | 200 000      |     15 629 900 |      15 633 500      |
+|   2  | 1 200 000    |     93 750 000 |      25 944 600      |
+|   3  | 10 200 000   |    703 174 200 |     337 268 600      |
+|   4  | 100 200 000  |  6 523 601 000 |   3 546 221 800      |
 
 </details>
 
-<details>
-		<summary> C++ Get top N against full sort </summary>
+As shown above, c++ ``bb sort`` overcame quick sort run time performance up to 2 times.
 
-``N``: 100 000, ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
-
-duplicates in set, bb sort dictless impl,
-
-``int:``
-
-| case |    N  |    qsort (ns)   |   get top 1 (ns ) |  get top 100 (ns )   |
-|------|-------|-----------------|-------------------|----------------------|
-|   1  | 1     |      10 943 200 |     10 774 800    |      10 396 400       |
-|   2  | 10    |      69 736 500 |     53 510 400    |      52 891 200       |
-|   3  | 100   |     547 019 000 |     462 951 700    |    447 414 400       |
-|   4  | 1000  |   5 207 205 100 |    4 460 983 800    | 4 401 571 700       |
-
-``double:``
-
-| case |    N  |    qsort (ns)    |   get top 1 (ns ) |  get top 100 (ns )   |
-|------|-------|------------------|-------------------|----------------------|
-|   1  | 1     |       10 451 100 |     10 690 400    |     10 836 300       |
-|   2  | 10    |       85 839 300 |     63 968 200    |     143 667 000       |
-|   3  | 100   |      687 395 000 |    531 726 000    |    532 256 200       |
-|   4  | 1000  |    6 733 593 800 |  5 100 721 600    |  5 092 541 900      |
-
-
-</details>
-
-From observation of result, I supposed to conclude that the main bottleneck of new algorithm is space requirements. Unfortunately, c++ poolable version of data storage overcame quick sort run time performance only in debug mode. To make it more practical, I hardcoded max bucket size (128) to gather 10-20% better run time for non counting case.
-
-C# ``BB sort`` poolable implementation without counting duplicates has up to ``20% better`` full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. The usage of array pool reduces GC calls which lead to up to 3 times better performance on large arrays.
+C# ``BB sort`` poolable implementation without counting duplicates has up to ``20% better`` full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. 
 
 # Advantages
 
