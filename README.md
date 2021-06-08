@@ -4,9 +4,9 @@ In honor of Aleksey Navalny's ``Blue Boxers`` Case.
 
 Python3\C++\C# implementation of stable hybrid of non comparison counting and bucket sorting algorithm that works using ``O(N)`` time even for non uniformly distributed numbers.
 
-C++ and C# code taking advantage of using MIN\MAX heap, and poolable list(vector) to lower memory allocation bottleneck effect.
+C++ and C# code taking advantage of using MIN\MAX data structure, and poolable list(vector) to lower memory allocation bottleneck effect.
 
-The main idea and first line of python code has come on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation has been published. 
+The main idea and first lines of python code have come on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation has been published. 
 
 The ``BB sort`` is very simple and uses ``5N`` operations in average. 
 
@@ -110,7 +110,7 @@ Perform above checks and steps for each bucket. That will take ``O(N)``. Profit.
 	
 </details>
 
-# Min max heap advantage
+# Min\max data structures advantage
 
 As the main requirement, we have to calculate min\max value of each input bucket to scale each value to its result bucket. We can use the min max heap as the bucket container data structure. It is known that it takes O ``N`` to build it.
 
@@ -169,9 +169,9 @@ Another good point of having min\max heap as bucket container: it allows us to h
 	
 </details>
 
-Performance profiling shows that building that heap is very expensive, so we can use custom vector that keeps track of min, max values.
+Next steps in performance optimizations show that building that heap is very expensive. However, we need only min and max values, and do not have requirements to remove or modify the storage, so we can use custom vector that keeps track of min, max values instead of the min max heap.
 
-We can preserve size equals 3 case by adding mid field and handle that special case.
+Also, we can preserve the ```size equals 3``` case by adding ```mid``` field to our minMax vector and handle that special case there.
 
 # Performance 
 
@@ -268,9 +268,36 @@ std::vector<T> sample(std::vector<T> population, long long count){
 
 </details>
 
+
+<details>
+		<summary> C# Full sort performance comparison tables </summary>
+
+ ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
+
+
+``int:``
+
+| case |    N         |    qsort (ms)  |   bb sort (ms )  |
+|------|--------------|----------------|------------------|
+|   1  |    1 000 001  |      8        |     3            |
+|   2  |   10 000 001  |     95        |    37            |
+|   3  |  100 000 001  |    930        |   379            |
+
+
+``float:``
+
+| case |    N         |    qsort (ms)  |      bb sort (ms )   |
+|------|--------------|----------------|----------------------|
+|   1  |  1 001 001   |        646     |       446            |
+|   2  |  2 000 000   |      1 352     |     1 332            |
+|   3  |  2 000 000   |      1 266     |     1 034            |
+|   4  |  2 000 000   |      1 138     |     1 512            |
+
+</details>
+
 As shown above, c++ ``bb sort`` overcame quick sort run time performance up to 2 times.
 
-C# ``BB sort`` poolable implementation without counting duplicates has up to ``20% better`` full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. 
+C# ``BB sort`` poolable implementation without counting duplicates has up to 3 times full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. 
 
 # Advantages
 
