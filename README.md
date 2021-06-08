@@ -4,9 +4,9 @@ In honor of Aleksey Navalny's ``Blue Boxers`` Case.
 
 Python3\C++\C# implementation of stable hybrid of non comparison counting and bucket sorting algorithm that works using ``O(N)`` time even for non uniformly distributed numbers.
 
-C++ and C# code taking advantage of using MIN\MAX heap. C# part uses a poolable list to lower memory allocation bottleneck effect.
+C++ and C# code taking advantage of using MIN\MAX heap, and poolable list(vector) to lower memory allocation bottleneck effect.
 
-The main idea and python code has come on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation was published. 
+The main idea and first line of python code has come on the same day when the magnificent Aleksey Navalny's Blue Boxers investigation has been published. 
 
 The ``BB sort`` is very simple and uses ``5N`` operations in average. 
 
@@ -274,7 +274,7 @@ C# ``BB sort`` poolable implementation without counting duplicates has up to ``2
 
 # Advantages
 
-``BB sort`` can be used in lazy way. The output may be considered as a stream, iterator, or pipeline for next operation.
+``BB sort`` can be used in lazy way. We can consider the output as a stream, iterator, or pipeline for a next operation.
 
 Task like ``take M sorted items from N given unsorted items`` is good for ``BB sorting``. In that case first sorted item will be available in just ``O(2N)``. On the other hand, the heap data structure or quick select algorithm can be used to solve this kind of task more effectively.
 
