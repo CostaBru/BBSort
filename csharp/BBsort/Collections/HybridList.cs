@@ -13,10 +13,6 @@ namespace Flexols.Data.Collections
 {
     internal static class Tool
     {
-        /// <summary> Меняет значения переменных между собой </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="var1">переменная 1</param>
-        /// <param name="var2">переменная 2</param>
         public static void Swap<T>(ref T var1, ref T var2)
         {
             var _var3 = var1;
@@ -31,7 +27,7 @@ namespace Flexols.Data.Collections
     {
         public static readonly T Default = default(T);
 
-        public const int SmallListCount = 4;
+        public const int SmallListCount = 2;
 
         private static MethodInfo GetSizeOfMethod<T>()
         {
@@ -101,13 +97,11 @@ namespace Flexols.Data.Collections
             return m_root;
         }
 
-        internal INode m_root;
-        internal int m_count;
+        protected internal INode m_root;
+        protected internal int m_count;
 
         private T m_val0;
         private T m_val1;
-        private T m_val2;
-        private T m_val3;
 
         private bool m_isDisposed;
         private object m_syncRoot;
@@ -235,36 +229,6 @@ namespace Flexols.Data.Collections
 
                         throw new IndexOutOfRangeException();
                     }
-                    case 3:
-                    {
-                        switch (index)
-                        {
-                            case 0:
-                                return ref m_val0;
-                            case 1:
-                                return ref m_val1;
-                            case 2:
-                                return ref m_val2;
-                        }
-
-                        throw new IndexOutOfRangeException();
-                    }
-                    case 4:
-                    {
-                        switch (index)
-                        {
-                            case 0:
-                                return ref m_val0;
-                            case 1:
-                                return ref m_val1;
-                            case 2:
-                                return ref m_val2;
-                            case 3:
-                                return ref m_val3;
-                        }
-
-                        throw new IndexOutOfRangeException();
-                    }
                 }
 
                 throw new IndexOutOfRangeException();
@@ -352,8 +316,6 @@ namespace Flexols.Data.Collections
             {
                 m_val0 = source.m_val0;
                 m_val1 = source.m_val1;
-                m_val2 = source.m_val2;
-                m_val3 = source.m_val3;
 
                 m_count = source.m_count;
             }
@@ -475,7 +437,8 @@ namespace Flexols.Data.Collections
             return BinarySearch(value, startIndex, count, Comparer<T>.Default);
         }
 
-        public int BinarySearch(T value)
+        // ReSharper disable once UnusedMember.Global
+        public virtual int BinarySearch(T value)
         {
             var startIndex = 0;
             var endIndex = m_count - 1;
@@ -626,66 +589,6 @@ namespace Flexols.Data.Collections
                             default: throw new IndexOutOfRangeException();
                         }
                         break;
-                    case 3:
-                        switch (index)
-                        {
-                            case 0:
-                                Tool.Swap(ref m_val0, ref item);
-                                Tool.Swap(ref m_val1, ref item);
-                                Tool.Swap(ref m_val2, ref item);
-                                Add(item);
-                                break;
-                            case 1:
-
-                                Tool.Swap(ref m_val1, ref item);
-                                Tool.Swap(ref m_val2, ref item);
-                                Add(item);
-                                break;
-                            case 2:
-                                Tool.Swap(ref m_val2, ref item);
-                                Add(item);
-                                break;
-                            case 3:
-                                Add(item);
-                                break;
-                            default: throw new IndexOutOfRangeException();
-                        }
-                        break;
-                    case 4:
-                        switch (index)
-                        {
-                            case 0:
-
-                                Tool.Swap(ref m_val0, ref item);
-                                Tool.Swap(ref m_val1, ref item);
-                                Tool.Swap(ref m_val2, ref item);
-                                Tool.Swap(ref m_val3, ref item);
-                                Add(item);
-                                break;
-                            case 1:
-
-                                Tool.Swap(ref m_val1, ref item);
-                                Tool.Swap(ref m_val2, ref item);
-                                Tool.Swap(ref m_val3, ref item);
-                                Add(item);
-                                break;
-                            case 2:
-
-                                Tool.Swap(ref m_val2, ref item);
-                                Tool.Swap(ref m_val3, ref item);
-                                Add(item);
-                                break;
-                            case 3:
-
-                                Tool.Swap(ref m_val3, ref item);
-                                Add(item);
-                                break;
-                            case 4:
-                                Add(item);
-                                break;
-                            default: throw new IndexOutOfRangeException();
-                        }
-                        break;
                 }
             }
             else
@@ -766,24 +669,12 @@ namespace Flexols.Data.Collections
                         ++m_version;
                         ++m_count;
                         return;
-                    case 2:
-                        m_val2 = item;
-                        ++m_version;
-                        ++m_count;
-                        return;
-                    case 3:
-                        m_val3 = item;
-                        ++m_version;
-                        ++m_count;
-                        return;
                     default:
                         {
                             var storeNode = new StoreNode(s_maxSizeOfArray, SmallListCount * 2);
 
                             storeNode.m_items[0] = m_val0;
                             storeNode.m_items[1] = m_val1;
-                            storeNode.m_items[2] = m_val2;
-                            storeNode.m_items[3] = m_val3;
 
                             storeNode.m_items[SmallListCount] = item;
 
@@ -791,8 +682,6 @@ namespace Flexols.Data.Collections
 
                             m_val0 = Default;
                             m_val1 = Default;
-                            m_val2 = Default;
-                            m_val3 = Default;
 
                             m_root = storeNode;
 
@@ -833,8 +722,6 @@ namespace Flexols.Data.Collections
                         {
                             m_val0 = defaultValue;
                             m_val1 = defaultValue;
-                            m_val2 = defaultValue;
-                            m_val3 = defaultValue;
 
                             m_count = size;
                             ++m_version;
@@ -843,32 +730,13 @@ namespace Flexols.Data.Collections
                     case 1:
 
                         m_val1 = defaultValue;
-                        m_val2 = defaultValue;
-                        m_val3 = defaultValue;
 
                         m_count = size;
                         ++m_version;
                         return;
                     case 2:
-                        m_val2 = defaultValue;
-                        m_val3 = defaultValue;
-
 
                         m_count = size;
-                        ++m_version;
-                        return;
-                    case 3:
-
-                        m_val3 = defaultValue;
-
-                        m_count = size;
-                        ++m_version;
-
-
-                        return;
-                    case 4:
-                        m_count = size;
-
                         return;
                 }
             }
@@ -883,13 +751,9 @@ namespace Flexols.Data.Collections
                     {
                         storeNode.m_items[0] = m_val0;
                         storeNode.m_items[1] = m_val1;
-                        storeNode.m_items[2] = m_val2;
-                        storeNode.m_items[3] = m_val3;
 
                         m_val0 = Default;
                         m_val1 = Default;
-                        m_val2 = Default;
-                        m_val3 = Default;
                     }
 
                     storeNode.m_size = Math.Min(s_maxSizeOfArray, size);
@@ -960,9 +824,6 @@ namespace Flexols.Data.Collections
 
             m_val0 = Default;
             m_val1 = Default;
-            m_val2 = Default;
-            m_val3 = Default;
-
         }
 
         int IList.IndexOf(object value)
@@ -1011,21 +872,6 @@ namespace Flexols.Data.Collections
                         {
                             array[num++] = m_val0;
                             array[num++] = m_val1;
-                            return;
-                        }
-                    case 3:
-                        {
-                            array[num++] = m_val0;
-                            array[num++] = m_val1;
-                            array[num++] = m_val2;
-                            return;
-                        }
-                    case 4:
-                        {
-                            array[num++] = m_val0;
-                            array[num++] = m_val1;
-                            array[num++] = m_val2;
-                            array[num++] = m_val3;
                             return;
                         }
                     default:
@@ -1162,10 +1008,8 @@ namespace Flexols.Data.Collections
             {
                 switch (index)
                 {
-                    case 0: m_val0 = m_val1; m_val1 = m_val2; m_val2 = m_val3; m_val3 = Default;  break;
-                    case 1: m_val1 = m_val2; m_val2 = m_val3; m_val3 = Default; break;
-                    case 2: m_val2 = m_val3; m_val3 = Default; break;
-                    case 3: m_val3 = Default; break;
+                    case 0: m_val0 = m_val1; m_val1 = Default;  break;
+                    case 1: m_val1 = Default; break;
                  
                     default: throw new IndexOutOfRangeException();
                 }
@@ -1212,12 +1056,6 @@ namespace Flexols.Data.Collections
                     case 2:
                         m_val1 = Default;
                         break;
-                    case 3:
-                        m_val2 = Default;
-                        break;
-                    case 4:
-                        m_val3 = Default;
-                        break;
                     default: throw new ArgumentOutOfRangeException();
                 }
             }
@@ -1262,8 +1100,6 @@ namespace Flexols.Data.Collections
 
                     case 1: yield return m_val0; break;
                     case 2: yield return m_val0; CheckState(ref version); yield return m_val1; break;
-                    case 3: yield return m_val0; CheckState(ref version); yield return m_val1; CheckState(ref version); yield return m_val2; break;
-                    case 4: yield return m_val0; CheckState(ref version); yield return m_val1; CheckState(ref version); yield return m_val2; CheckState(ref version); yield return m_val3; break;
                  }
             }
             else
@@ -1349,68 +1185,20 @@ namespace Flexols.Data.Collections
                 ++list.m_version;
                 return;
             }
-            else
+
+            if (list.m_root == null && list.m_count <= 2)
             {
-                if (list.m_root == null && list.m_count <= 4)
+                switch (list.m_count)
                 {
-                    switch (list.m_count)
+                    case 2:
                     {
-                        case 2:
+                        if (comparison(list.m_val0 , list.m_val1) > 0)
                         {
-                            var sortArray = ArrayPool<T>.Shared.Rent(list.m_count);
-
-                            sortArray[0] = list.m_val0;
-                            sortArray[1] = list.m_val1;
-
-                            Array.Sort(sortArray, 0, list.m_count, new Comparer(comparison));
-
-                            list.m_val0 = sortArray[0];
-                            list.m_val1 = sortArray[1];
-
-                            ArrayPool<T>.Shared.Return(sortArray, true);
-
-                            ++list.m_version;
-                            return;
+                            Tool.Swap(ref list.m_val0, ref list.m_val1);
                         }
-                        case 3:
-                        {
-                            var sortArray = ArrayPool<T>.Shared.Rent(list.m_count);
-
-                            sortArray[0] = list.m_val0;
-                            sortArray[1] = list.m_val1;
-                            sortArray[2] = list.m_val2;
-
-                            Array.Sort(sortArray, 0, list.m_count, new Comparer(comparison));
-
-                            list.m_val0 = sortArray[0];
-                            list.m_val1 = sortArray[1];
-                            list.m_val2 = sortArray[2];
-
-                            ArrayPool<T>.Shared.Return(sortArray, true);
-                            ++list.m_version;
-                            return;
-                            }
-                        case 4:
-                        {
-                            var sortArray = ArrayPool<T>.Shared.Rent(list.m_count);
-
-                            sortArray[0] = list.m_val0;
-                            sortArray[1] = list.m_val1;
-                            sortArray[2] = list.m_val2;
-                            sortArray[3] = list.m_val3;
-
-                            Array.Sort(sortArray, 0, list.m_count, new Comparer(comparison));
-
-                            list.m_val0 = sortArray[0];
-                            list.m_val1 = sortArray[1];
-                            list.m_val2 = sortArray[2];
-                            list.m_val3 = sortArray[3];
-
-                            ArrayPool<T>.Shared.Return(sortArray, true);
-
-                            ++list.m_version;
-                            return;
-                            }
+                          
+                        ++list.m_version;
+                        return;
                     }
                 }
             }

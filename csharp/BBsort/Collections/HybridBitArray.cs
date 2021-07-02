@@ -145,10 +145,15 @@ namespace Flexols.Data.Collections
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "ArgumentOutOfRange_Index");
             }
-
-            var valueByRef = this.m_array.ValueByRef(index / BitsPerInt32);
-
-            return (uint) (valueByRef & 1 << index % BitsPerInt32) > 0U;
+            
+            if (m_array.m_root is HybridList<int>.StoreNode storeNode)
+            {
+                return (uint) (storeNode.m_items[index / BitsPerInt32] & 1 << index % BitsPerInt32) > 0U;
+            }
+            else
+            {
+                return (uint) (this.m_array.ValueByRef(index / BitsPerInt32) & 1 << index % BitsPerInt32) > 0U;
+            }
         }
 
         public bool HasAndSet(int index)
@@ -162,10 +167,15 @@ namespace Flexols.Data.Collections
             {
                 return false;
             }
-
-            var valueByRef = this.m_array.ValueByRef(index / BitsPerInt32);
-
-            return (uint)(valueByRef & 1 << index % BitsPerInt32) > 0U;
+            
+            if (m_array.m_root is HybridList<int>.StoreNode storeNode)
+            {
+                return (uint) (storeNode.m_items[index / BitsPerInt32] & 1 << index % BitsPerInt32) > 0U;
+            }
+            else
+            {
+                return (uint)(this.m_array.ValueByRef(index / BitsPerInt32) & 1 << index % BitsPerInt32) > 0U;
+            }
         }
 
         /// <summary>Sets the bit at a specific position in the <see cref="T:System.Collections.BitArray" /> to the specified value.</summary>
@@ -182,20 +192,38 @@ namespace Flexols.Data.Collections
                 throw new ArgumentOutOfRangeException(nameof(index), "ArgumentOutOfRange_Index");
             }
 
-            var valueByRef = this.m_array.ValueByRef(index / BitsPerInt32);
-
-            int newVal = 0;
-
-            if (value)
+            if (m_array.m_root is HybridList<int>.StoreNode storeNode)
             {
-                newVal = valueByRef | (1 << index % BitsPerInt32);
+                int newVal = 0;
+
+                if (value)
+                {
+                    newVal = storeNode.m_items[(index / BitsPerInt32)] | (1 << index % BitsPerInt32);
+                }
+                else
+                {
+                    newVal = storeNode.m_items[(index / BitsPerInt32)] & ~(1 << index % BitsPerInt32);
+                }
+
+                storeNode.m_items[(index / BitsPerInt32)] = newVal;
             }
             else
             {
-                newVal = valueByRef & ~(1 << index % BitsPerInt32);
-            }
+                var valueByRef = this.m_array.ValueByRef(index / BitsPerInt32);
 
-            m_array.ValueByRef(index / BitsPerInt32) = newVal;
+                int newVal = 0;
+
+                if (value)
+                {
+                    newVal = valueByRef | (1 << index % BitsPerInt32);
+                }
+                else
+                {
+                    newVal = valueByRef & ~(1 << index % BitsPerInt32);
+                }
+
+                m_array.ValueByRef(index / BitsPerInt32) = newVal;
+            }
         }
 
         public bool TrySet(int index, bool value)
@@ -210,21 +238,39 @@ namespace Flexols.Data.Collections
                 return false;
             }
 
-            var valueByRef = this.m_array.ValueByRef(index / BitsPerInt32);
-
-            int newVal = 0;
-
-            if (value)
+            if (m_array.m_root is HybridList<int>.StoreNode storeNode)
             {
-                newVal = valueByRef | (1 << index % BitsPerInt32);
+                int newVal = 0;
+
+                if (value)
+                {
+                    newVal = storeNode.m_items[(index / BitsPerInt32)] | (1 << index % BitsPerInt32);
+                }
+                else
+                {
+                    newVal = storeNode.m_items[(index / BitsPerInt32)] & ~(1 << index % BitsPerInt32);
+                }
+
+                storeNode.m_items[(index / BitsPerInt32)] = newVal;
             }
             else
             {
-                newVal = valueByRef & ~(1 << index % BitsPerInt32);
+                var valueByRef = this.m_array.ValueByRef(index / BitsPerInt32);
+
+                int newVal = 0;
+
+                if (value)
+                {
+                    newVal = valueByRef | (1 << index % BitsPerInt32);
+                }
+                else
+                {
+                    newVal = valueByRef & ~(1 << index % BitsPerInt32);
+                }
+
+                m_array.ValueByRef(index / BitsPerInt32) = newVal;
             }
-
-            m_array.ValueByRef(index / BitsPerInt32) = newVal;
-
+          
             return true;
         }
 
@@ -249,20 +295,38 @@ namespace Flexols.Data.Collections
                 }
             }
 
-            var valueByRef = this.m_array.ValueByRef(index / BitsPerInt32);
-
-            int newVal = 0;
-
-            if (value)
+            if (m_array.m_root is HybridList<int>.StoreNode storeNode)
             {
-                newVal = valueByRef | (1 << index % BitsPerInt32);
+                int newVal = 0;
+
+                if (value)
+                {
+                    newVal = storeNode.m_items[index / BitsPerInt32] | (1 << index % BitsPerInt32);
+                }
+                else
+                {
+                    newVal = storeNode.m_items[index / BitsPerInt32] & ~(1 << index % BitsPerInt32);
+                }
+
+                storeNode.m_items[index / BitsPerInt32] = newVal;
             }
             else
             {
-                newVal = valueByRef & ~(1 << index % BitsPerInt32);
-            }
+                var valueByRef = this.m_array.ValueByRef(index / BitsPerInt32);
 
-            m_array.ValueByRef(index / BitsPerInt32) = newVal;
+                int newVal = 0;
+
+                if (value)
+                {
+                    newVal = valueByRef | (1 << index % BitsPerInt32);
+                }
+                else
+                {
+                    newVal = valueByRef & ~(1 << index % BitsPerInt32);
+                }
+
+                m_array.ValueByRef(index / BitsPerInt32) = newVal;
+            }
         }
 
         /// <summary>Sets all bits in the <see cref="T:System.Collections.BitArray" /> to the specified value.</summary>
@@ -271,11 +335,22 @@ namespace Flexols.Data.Collections
         public void SetAll(bool value)
         {
             int num = value ? -1 : 0;
+            
             var arrayLength = HybridBitArray.GetArrayLength(this.m_length, BitsPerInt32);
 
-            for (int index = 0; index < arrayLength; ++index)
+            if (m_array.m_root is HybridList<int>.StoreNode storeNode)
             {
-                this.m_array.ValueByRef(index) = num;
+                for (int index = 0; index < arrayLength && index <  storeNode.m_items.Length; ++index)
+                {
+                    storeNode.m_items[index] = num;
+                }
+            }
+            else
+            {
+                for (int index = 0; index < arrayLength; ++index)
+                {
+                    this.m_array.ValueByRef(index) = num;
+                }
             }
         }
 

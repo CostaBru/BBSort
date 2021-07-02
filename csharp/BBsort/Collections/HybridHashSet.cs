@@ -300,15 +300,30 @@ namespace Flexols.Data.Collections
             {
                 int hashCode = InternalGetHashCode(item);
 
-                var start = m_buckets.ValueByRef(hashCode % m_buckets.Count);
-
-                for (int? index = start - 1; index >= 0; index = m_slots.ValueByRef(index.Value).next)
+                if (m_slots.m_root is HybridList<Slot>.StoreNode storeNode)
                 {
-                    var slot = m_slots.ValueByRef(index.Value);
+                    var start = m_buckets.ValueByRef(hashCode % m_buckets.Count);
 
-                    if (slot.hashCode == hashCode && m_comparer.Equals(slot.value, item))
+                    for (int? index = start - 1; index >= 0; index = storeNode.m_items[index.Value].next)
                     {
-                        return true;
+                        if (storeNode.m_items[index.Value].hashCode == hashCode && m_comparer.Equals(storeNode.m_items[index.Value].value, item))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    var start = m_buckets.ValueByRef(hashCode % m_buckets.Count);
+
+                    for (int? index = start - 1; index >= 0; index = m_slots.ValueByRef(index.Value).next)
+                    {
+                        var slot = m_slots.ValueByRef(index.Value);
+
+                        if (slot.hashCode == hashCode && m_comparer.Equals(slot.value, item))
+                        {
+                            return true;
+                        }
                     }
                 }
             }
@@ -440,9 +455,10 @@ namespace Flexols.Data.Collections
             }
 
             var array = ArrayPool<T>.Shared.Rent(m_count);
+            Array.Clear(array, 0, array.Length);
             CopyTo(array);
             info.AddValue("Elements", (object)array, typeof(T[]));
-            ArrayPool<T>.Shared.Return(array);
+            ArrayPool<T>.Shared.Return(array, true);
         }
 
         /// <summary>Implements the <see cref="T:System.Runtime.Serialization.ISerializable" /> interface and raises the deserialization event when the deserialization is complete.</summary>

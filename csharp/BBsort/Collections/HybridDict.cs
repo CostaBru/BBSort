@@ -10,6 +10,9 @@ namespace Flexols.Data.Collections
     [DebuggerDisplay("Count = {Count}")]
     public class HybridDict<TKey, TValue> : IDictionary<TKey, TValue>, ICollection<KeyValuePair<TKey, TValue>>, IEnumerable<KeyValuePair<TKey, TValue>>, IReadOnlyDictionary<TKey, TValue>, IReadOnlyCollection<KeyValuePair<TKey, TValue>>, IDisposable
     {
+        
+        public const int HashCollisionThreshold = 100;
+        
         [Serializable]
         public struct Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>
         {
@@ -102,7 +105,7 @@ namespace Flexols.Data.Collections
         }
 
         [Serializable]
-        public sealed class KeyCollection : ICollection<TKey>
+        public sealed class KeyCollection : ICollection<TKey>, IReadOnlyCollection<TKey>
         {
             private readonly HybridDict<TKey, TValue> m_dictionary;
 
@@ -269,7 +272,7 @@ namespace Flexols.Data.Collections
         }
 
         [Serializable]
-        public sealed class ValueCollection : ICollection<TValue>
+        public sealed class ValueCollection : ICollection<TValue>, IReadOnlyCollection<TValue>
         {
             private readonly HybridDict<TKey, TValue> m_dictionary;
 
@@ -440,7 +443,7 @@ namespace Flexols.Data.Collections
             private static readonly int[] s_primes =
                 new int[]
                 {
-                    3, 7, 11, 0x11, 0x17, 0x1d, 0x25, 0x2f, 0x3b, 0x47, 0x59, 0x6b, 0x83, 0xa3, 0xc5, 0xef,
+                    2, 3, 7, 11, 0x11, 0x17, 0x1d, 0x25, 0x2f, 0x3b, 0x47, 0x59, 0x6b, 0x83, 0xa3, 0xc5, 0xef,
                     0x125, 0x161, 0x1af, 0x209, 0x277, 0x2f9, 0x397, 0x44f, 0x52f, 0x63d, 0x78b, 0x91d, 0xaf1, 0xd2b, 0xfd1, 0x12fd,
                     0x16cf, 0x1b65, 0x20e3, 0x2777, 0x2f6f, 0x38ff, 0x446f, 0x521f, 0x628d, 0x7655, 0x8e01, 0xaa6b, 0xcc89, 0xf583, 0x126a7, 0x1619b,
                     0x1a857, 0x1fd3b, 0x26315, 0x2dd67, 0x3701b, 0x42023, 0x4f361, 0x5f0ed, 0x72125, 0x88e31, 0xa443b, 0xc51eb, 0xec8c1, 0x11bdbf, 0x154a3f, 0x198c4f,
@@ -510,7 +513,7 @@ namespace Flexols.Data.Collections
             public TValue Value;
         }
 
-        private readonly IEqualityComparer<TKey> m_comparer;
+        private IEqualityComparer<TKey> m_comparer;
         private HybridList<int> m_buckets;
         private HybridList<Entry> m_entries;
         private int m_count;
@@ -573,7 +576,7 @@ namespace Flexols.Data.Collections
 
         public void Add(TKey key, TValue value)
         {
-            Insert(key, value, true);
+            Insert(key, value);
         }
 
         public void Clear()
@@ -603,29 +606,57 @@ namespace Flexols.Data.Collections
 
         public bool ContainsValue(TValue value)
         {
-            if (value == null)
+            if (m_entries.m_root is HybridList<Entry>.StoreNode storeNode)
             {
-                for (int i = 0; i < m_count; i++)
+                if (value == null)
                 {
-                    Entry entry = m_entries[i];
-                    if ((entry.HashCode >= 0) && (entry.Value == null))
+                    for (int i = 0; i < m_count && i < storeNode.m_items.Length; i++)
                     {
-                        return true;
+                        if ((storeNode.m_items[i].HashCode >= 0) && (storeNode.m_items[i].Value == null))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    EqualityComparer<TValue> comparer = EqualityComparer<TValue>.Default;
+                    for (int j = 0; j < m_count && j < storeNode.m_items.Length; j++)
+                    {
+                        if ((storeNode.m_items[j].HashCode >= 0) && comparer.Equals(storeNode.m_items[j].Value, value))
+                        {
+                            return true;
+                        }
                     }
                 }
             }
             else
             {
-                EqualityComparer<TValue> comparer = EqualityComparer<TValue>.Default;
-                for (int j = 0; j < m_count; j++)
+                if (value == null)
                 {
-                    Entry entry = m_entries[j];
-                    if ((entry.HashCode >= 0) && comparer.Equals(entry.Value, value))
+                    for (int i = 0; i < m_count; i++)
                     {
-                        return true;
+                        Entry entry = m_entries[i];
+                        if ((entry.HashCode >= 0) && (entry.Value == null))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    EqualityComparer<TValue> comparer = EqualityComparer<TValue>.Default;
+                    for (int j = 0; j < m_count; j++)
+                    {
+                        Entry entry = m_entries[j];
+                        if ((entry.HashCode >= 0) && comparer.Equals(entry.Value, value))
+                        {
+                            return true;
+                        }
                     }
                 }
             }
+
             return false;
         }
 
@@ -663,15 +694,30 @@ namespace Flexols.Data.Collections
             }
             if (m_buckets != null)
             {
-                int num = m_comparer.GetHashCode(key) & 0x7fffffff;
-                Entry currentEntry;
-                for (int i = m_buckets[num % m_buckets.Count]; i >= 0; i = currentEntry.Next)
+                if (m_entries.m_root is HybridList<Entry>.StoreNode storeNode)
                 {
-                    currentEntry = m_entries[i];
-                    if ((currentEntry.HashCode == num) && m_comparer.Equals(currentEntry.Key, key))
+                    int num = m_comparer.GetHashCode(key) & 0x7fffffff;
+                    for (int i = m_buckets[num % m_buckets.Count] - 1; i >= 0 && i < storeNode.m_items.Length; i = storeNode.m_items[i].Next)
                     {
-                        entry = new KeyValuePair<TKey, TValue>(currentEntry.Key, currentEntry.Value);
-                        return true;
+                        if ((storeNode.m_items[i].HashCode == num) && m_comparer.Equals(storeNode.m_items[i].Key, key))
+                        {
+                            entry = new KeyValuePair<TKey, TValue>(storeNode.m_items[i].Key, storeNode.m_items[i].Value);
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    int num = m_comparer.GetHashCode(key) & 0x7fffffff;
+                    Entry currentEntry;
+                    for (int i = m_buckets[num % m_buckets.Count] - 1; i >= 0; i = currentEntry.Next)
+                    {
+                        currentEntry = m_entries[i];
+                        if ((currentEntry.HashCode == num) && m_comparer.Equals(currentEntry.Key, key))
+                        {
+                            entry = new KeyValuePair<TKey, TValue>(currentEntry.Key, currentEntry.Value);
+                            return true;
+                        }
                     }
                 }
             }
@@ -691,13 +737,13 @@ namespace Flexols.Data.Collections
             m_buckets = new HybridList<int>(prime);
             m_entries = new HybridList<Entry>(prime);
 
-            m_buckets.Ensure(prime, -1);
+            m_buckets.Ensure(prime);
             m_entries.Ensure(prime);
 
             m_freeList = -1;
         }
 
-        private void Insert(TKey key, TValue value, bool add)
+        private void Insert(TKey key, TValue value)
         {
             if (key == null)
             {
@@ -711,24 +757,39 @@ namespace Flexols.Data.Collections
             int freeList;
             int hashCode = m_comparer.GetHashCode(key) & 0x7fffffff;
             int index = hashCode % m_buckets.Count;
-
-            Entry currentEntry;
-            for (int i = m_buckets[index]; i >= 0; i = currentEntry.Next)
+            
+            if (m_entries.m_root is HybridList<Entry>.StoreNode storeNode)
             {
-                currentEntry = m_entries[i];
-                if ((currentEntry.HashCode == hashCode) && m_comparer.Equals(currentEntry.Key, key))
+                for (int i = m_buckets[index] - 1; i >= 0; i = storeNode.m_items[i].Next)
                 {
-                    if (add)
+                    ref Entry storeNodeItem = ref storeNode.m_items[i];
+                    
+                    if ((storeNodeItem.HashCode == hashCode) && m_comparer.Equals(storeNodeItem.Key, key))
                     {
-                        throw new ArgumentException();
+                        storeNodeItem.Value = value;
+                        
+                        m_version++;
+                        return;
                     }
-
-                    currentEntry.Value = value;
-                    m_entries[i] = currentEntry;
-                    m_version++;
-                    return;
                 }
             }
+            else
+            {
+                for (int i = m_buckets[index] - 1; i >= 0;)
+                {
+                    ref Entry currentEntry = ref m_entries.ValueByRef(i);
+                    if ((currentEntry.HashCode == hashCode) && m_comparer.Equals(currentEntry.Key, key))
+                    {
+                        currentEntry.Value = value;
+                        m_entries[i] = currentEntry;
+                        m_version++;
+                        return;
+                    }
+
+                    i = currentEntry.Next;
+                }
+            }
+          
             if (m_freeCount > 0)
             {
                 freeList = m_freeList;
@@ -739,14 +800,16 @@ namespace Flexols.Data.Collections
             {
                 if (m_count == m_entries.Count)
                 {
-                    Resize();
+                    int prime = Prime.GetPrime(m_count * 2);
+
+                    Resize(prime);
                     index = hashCode % m_buckets.Count;
                 }
                 freeList = m_count;
                 m_count++;
             }
-            m_entries[freeList] = new Entry(hashCode, m_buckets[index], key, value);
-            m_buckets[index] = freeList;
+            m_entries[freeList] = new Entry(hashCode, m_buckets[index] - 1, key, value);
+            m_buckets[index] = freeList + 1;
             m_version++;
         }
 
@@ -759,23 +822,24 @@ namespace Flexols.Data.Collections
             if (m_buckets != null)
             {
                 int hashCode = m_comparer.GetHashCode(key) & 0x7fffffff;
+                
                 int index = hashCode % m_buckets.Count;
-                int num = -1;
-                Entry currentEntry;
-                for (int i = m_buckets[index]; i >= 0; i = currentEntry.Next)
+                int last = -1;
+                
+                for (int i = m_buckets[index] - 1; i >= 0; )
                 {
-                    currentEntry = m_entries[i];
+                    ref var currentEntry = ref m_entries.ValueByRef(i);
                     if ((currentEntry.HashCode == hashCode) && m_comparer.Equals(currentEntry.Key, key))
                     {
-                        if (num < 0)
+                        if (last < 0)
                         {
-                            m_buckets[index] = currentEntry.Next;
+                            m_buckets[index] = currentEntry.Next + 1;
                         }
                         else
                         {
-                            Entry entry = m_entries[num];
+                            Entry entry = m_entries[last];
                             entry.Next = currentEntry.Next;
-                            m_entries[num] = entry;
+                            m_entries[last] = entry;
                         }
                         m_entries[i] = new Entry(-1, m_freeList, default(TKey), default(TValue));
                         m_freeList = i;
@@ -783,30 +847,63 @@ namespace Flexols.Data.Collections
                         m_version++;
                         return true;
                     }
-                    num = i;
+                    last = i;
+                    i = currentEntry.Next;
                 }
             }
             return false;
         }
 
-        private void Resize()
+        private void Resize(int prime, bool forceNewHashCodes = false)
         {
-            int prime = Prime.GetPrime(m_count * 2);
             HybridList<int> newBuckets = new HybridList<int>(prime);
             HybridList<Entry> newEntries = new HybridList<Entry>(prime);
-            for (int i = 0; i < prime; i++)
-            {
-                newBuckets.Add(-1);
-            }
+            
+            newBuckets.Ensure(prime);
 
-            int count = 0;
-            foreach (Entry entry in m_entries)
+            if (m_entries.m_root is HybridList<Entry>.StoreNode storeNode)
             {
-                Entry newEntry = entry;
-                int index = newEntry.HashCode % prime;
-                newEntry.Next = newBuckets[index];
-                newEntries.Add(newEntry);
-                newBuckets[index] = count++;
+                for (var i = 0; i < m_entries.m_count && i < storeNode.m_items.Length; i++)
+                {
+                    ref var entry = ref storeNode.m_items[i];
+                    
+                    if (entry.HashCode >= 0)
+                    {
+                        var bucket = entry.HashCode % prime;
+
+                        entry.Next = newBuckets[bucket] - 1;
+                        
+                        newBuckets[bucket] = i + 1;
+                        
+                        newEntries.Add(entry);
+                    }
+                    else
+                    {
+                        newEntries.Add(entry);
+                    }
+                }
+            }
+            else
+            {
+                for (var i = 0; i < m_entries.m_count; i++)
+                {
+                    ref var entry = ref m_entries.ValueByRef(i);
+                    
+                    if (entry.HashCode >= 0)
+                    {
+                        var bucket = entry.HashCode % prime;
+
+                        entry.Next = newBuckets[bucket] - 1;
+                        
+                        newBuckets[bucket] = i + 1;
+                        
+                        newEntries.Add(entry);
+                    }
+                    else
+                    {
+                        newEntries.Add(entry);
+                    }
+                }
             }
 
             int unusedCount = prime - m_entries.Count;
@@ -901,7 +998,7 @@ namespace Flexols.Data.Collections
             }
             set
             {
-                Insert(key, value, false);
+                Insert(key, value);
             }
         }
 
