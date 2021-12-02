@@ -17,10 +17,7 @@
 namespace bb_sort_dictless_min_max_vect {
 
     template<typename T>
-    void getBuckets(BUCKET_DM & minMaxVector, STACK_DM & buckets, int count) {
-
-        float minLog = bb_sort::getLog(minMaxVector.Min);
-        float maxLog = bb_sort::getLog(minMaxVector.Max);
+    void getBuckets(BUCKET_DM & minMaxVector, float minLog, float maxLog, STACK_DM & buckets, int count) {
 
         std::tuple<float, float> params = bb_sort::GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
@@ -102,16 +99,35 @@ namespace bb_sort_dictless_min_max_vect {
               std::vector<T> & output,
               int index) {
 
-        if (top.Max == top.Min) {
+        float minLog = bb_sort::getLog(top.Min);
+        float maxLog = bb_sort::getLog(top.Max);
 
-            return caseAllDuplicates(st, top, output, index);
+        if(maxLog - minLog < 0.1){
+
+            if (top.Max == top.Min) {
+
+                return caseAllDuplicates(st, top, output, index);
+            }
+
+            std::sort (top.Storage.begin(), top.Storage.end());
+
+            auto count = top.size();
+
+            for (int i = 0; i < count; ++i) {
+
+                output[index + i] = top.Storage.at(i);
+            }
+
+            st.pop_back();
+
+            return count;
         }
 
         long int count = (top.size() / 2) + 1;
 
         BUCKETS_DM newBuckets(count);
 
-        getBuckets<T>(top, newBuckets, count);
+        getBuckets<T>(top, minLog, maxLog, newBuckets, count);
 
         st.pop_back();
 
@@ -202,7 +218,7 @@ namespace bb_sort_dictless_min_max_vect {
 
         int count = array.size();
 
-        count = std::min(count, 128);
+        count = std::min(count, 1024);
 
         STACK_DM st(count);
 
