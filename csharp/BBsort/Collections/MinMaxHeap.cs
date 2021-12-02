@@ -81,7 +81,7 @@ namespace Flexols.Data.Collections
         }
 
         public bool AllDuplicates => comparer_.Compare(heap_.m_items[0], heap_.m_items[1]) == 0;
-
+        
         public (int, int, int) GetMaxMidMin()
         {
             if (comparer_.Compare(heap_.m_items[1], heap_.m_items[2]) == -1)
@@ -356,6 +356,8 @@ namespace Flexols.Data.Collections
                      * smallest child */
                     return (comparer_.Compare(heap_.m_items[1], heap_.m_items[2])) == -1 ? 1 : 2;
             }
-        }       
+        }
+
+        public T[] Storage => heap_.m_items;
     }
 }

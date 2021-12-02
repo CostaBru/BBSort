@@ -39,7 +39,7 @@ namespace BBSortTests
 
             Array.Sort<float>(goldenArr);
 
-            var bbSort = new BBsort.Counting.BBSort<float>(BBsort.Counting.BBSort<float>.getLog);
+            var bbSort = new BBsort.DictLess.MinMaxList.BBSort<float>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog);
 
             var bbSortTest = new float[arrCopy.Count];
             

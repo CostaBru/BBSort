@@ -4,121 +4,214 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 
 namespace Flexols.Data.Collections
 {
-    internal static class Tool
-    {
-        public static void Swap<T>(ref T var1, ref T var2)
-        {
-            var _var3 = var1;
-            var1 = var2;
-            var2 = _var3;
-        }
-    }
-
     [DebuggerDisplay("Count {m_count}")]
     [DebuggerTypeProxy(typeof(CollectionDebugView<>))]
-    public class HybridList<T> : IList<T>, IReadOnlyList<T>, ICollection, IList, IDisposable
+    public class HybridList<T> : IList<T>, IReadOnlyList<T>, ICollection, IList, IAppender<T>, IDisposable
     {
+        public static HybridList<T> operator +(HybridList<T> a, IReadOnlyCollection<T> b)
+        {
+            if (ReferenceEquals(a, null))
+            {
+                return b?.ToHybridList();
+            }
+            
+            if (ReferenceEquals(b, null))
+            {
+                return a?.ToHybridList();
+            }
+
+            var hybridList = new HybridList<T>(a.Count + b.Count);
+            
+            hybridList.AddRange(a);
+            hybridList.AddRange(b);
+
+            return hybridList;
+        }
+        
+        public static HybridList<T> operator -(HybridList<T> a, IReadOnlyCollection<T> b)
+        {
+            if (ReferenceEquals(a, null))
+            {
+                return null;
+            }
+            
+            if (ReferenceEquals(b, null))
+            {
+                return a.ToHybridList();
+            }
+
+            var list = new HybridList<T>(Math.Max(a.Count - b.Count, 0));
+            
+            foreach (var item in a)
+            {
+                if (!(b.Contains(item)))
+                {
+                    list.Add(item);
+                }
+            }
+
+            return list;
+        }
+        
+        public static bool operator ==(HybridList<T> a, IReadOnlyList<T> b)
+        {
+            if (RuntimeHelpers.Equals(a, b))
+                return true;
+
+            if ((object) a == null || (object) b == null)
+                return false;
+
+            return a.EqualsList(b);
+        }
+    
+        public static bool operator !=(HybridList<T> a, IReadOnlyList<T> b)
+        {
+            if (RuntimeHelpers.Equals(a, b))
+                return false;
+
+            if ((object)a == null || (object)b == null)
+                return true;
+
+            return !(a.EqualsList(b));
+        }
+        
+        protected bool EqualsList(IReadOnlyList<T> other)
+        {
+            if (m_count == other.Count)
+            {
+                for (int i = 0; i < m_count ; i++)
+                {
+                    if (!(EqualityComparer<T>.Default.Equals(this[i], other[i])))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+            
+            return EqualsList((HybridList<T>) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = m_count.GetHashCode();
+
+                foreach (var item in this)
+                {
+                    hashCode = (hashCode * 397) ^ EqualityComparer<T>.Default.GetHashCode(item);
+                }
+              
+                return hashCode;
+            }
+        }
+
         public static readonly T Default = default(T);
+        private static readonly int s_maxSizeOfArray;
 
         public const int SmallListCount = 2;
 
-        private static MethodInfo GetSizeOfMethod<T>()
-        {
-            var assemblyName = new AssemblyName() { Name = "Data.Collections.Internal" };
-
-            var typeBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run).DefineDynamicModule(
-                    "HybridList").DefineType("HybridList", TypeAttributes.Public);
-
-            var methodBuilder = typeBuilder.DefineMethod("SizeOf", MethodAttributes.Public | MethodAttributes.Static, typeof(int), null);
-            var strArray = new string[1] { "T" };
-            var parameterBuilderArray = methodBuilder.DefineGenericParameters(strArray);
-
-            var ilGenerator = methodBuilder.GetILGenerator();
-
-            ilGenerator.Emit(OpCodes.Sizeof, parameterBuilderArray[0]);
-            ilGenerator.Emit(OpCodes.Ret);
-
-            return typeBuilder.CreateTypeInfo().GetMethod("SizeOf").MakeGenericMethod(typeof(T));
-        }
-
-        public static int GetObjectSize<T>()
-        {
-            var type = typeof(T);
-
-            if (type.IsValueType == false)
-            {
-                return IntPtr.Size;
-            }
-
-            return (int)GetSizeOfMethod<T>().Invoke(null, null); 
-        }
-       
-        public static int GetSmallHeapSuitableLength<T>()
-        {
-            return GetSmallHeapSuitableLength<T>(false);
-        }
-     
-        public static int GetSmallHeapSuitableLength<T>(bool toPowerOf2)
-        {
-            int size = 80000 / GetObjectSize<T>();
-            if (toPowerOf2)
-            {
-                int val = 1;
-                while (val <= size)
-                {
-                    val *= 2;
-                }
-                size = val / 2;
-            }
-            return size;
-        }
-
-        private static readonly int s_maxSizeOfArray;
-
-        static HybridList()
-        {
-            var capacity = GetSmallHeapSuitableLength<T>();
-
-            s_maxSizeOfArray = 1 << (int)Math.Log(capacity, 2.0);
-        }
-
         private const int c_minCapacity = 2;
         private readonly int m_intialCapacity;
-
-        public INode GetRoot()
-        {
-            return m_root;
-        }
-
+        
         protected internal INode m_root;
         protected internal int m_count;
+        protected internal int m_version;
 
         private T m_val0;
         private T m_val1;
 
         private bool m_isDisposed;
         private object m_syncRoot;
-        private int m_version;
+        
+        static HybridList()
+        {
+            s_maxSizeOfArray = 1024 * 1024;
+        }
+        
+        
+        public HybridList()
+        {
+            m_intialCapacity = SmallListCount;
+        }
+      
+        public HybridList(int capacity)
+        {
+            if (capacity < 0)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
 
+            m_intialCapacity = 1 << (int)Math.Log(capacity < c_minCapacity ? 2.0 : (capacity > s_maxSizeOfArray ? s_maxSizeOfArray : capacity), 2.0);
+
+            if (m_intialCapacity > SmallListCount)
+            {
+                m_root = new StoreNode(s_maxSizeOfArray, m_intialCapacity);
+            }
+        }
+        
+        public HybridList(IEnumerable<T> enumerable)
+        {
+            if (enumerable is HybridList<T> hybridList)
+            {
+                m_intialCapacity = hybridList.Count;
+
+                CreateFromList(hybridList);
+            }
+            else
+            {
+                m_intialCapacity = s_maxSizeOfArray;
+
+                AddRange(enumerable);
+            }
+        }
+
+        public HybridList([NotNull] HybridList<T> source)
+        {
+            m_intialCapacity = source.Count;
+
+            CreateFromList(source);
+        }
+
+        public INode GetRoot()
+        {
+            return m_root;
+        }
+       
         void ICollection.CopyTo(Array array, int index)
         {
             CopyTo((T[])array, index);
         }
 
-        public int Count
-        {
-            get
-            {
-                return m_count;
-            }
-        }
+        public int Count => m_count;
 
         object ICollection.SyncRoot
         {
@@ -132,21 +225,9 @@ namespace Flexols.Data.Collections
             }
         }
 
-        bool ICollection.IsSynchronized
-        {
-            get
-            {
-                return false;
-            }
-        }
+        bool ICollection.IsSynchronized => false;
 
-        public bool IsReadOnly
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public bool IsReadOnly => false;
 
         bool IList.IsFixedSize
         {
@@ -158,41 +239,21 @@ namespace Flexols.Data.Collections
 
         T IList<T>.this[int index]
         {
-            get
-            {
-                return ValueByRef(index);
-            }
-            set
-            {
-                ValueByRef(index) = value;
-            }
+            get => this[index];
+            set => this[index] = value;
         }
 
-        T IReadOnlyList<T>.this[int index]
-        {
-            get
-            {
-                return ValueByRef(index);
-            }
-        }
+        T IReadOnlyList<T>.this[int index] => this[index];
 
-        public virtual T this[int index]
+        public T this[int index]
         {
-            get
-            {
-                return ValueByRef(index);
-            }
-            set
-            {
-                ValueByRef(index) = value;
-            }
+            get => ValueByRef(index);
+            set => ValueByRef(index) = value;
         }
 
         public ref T ValueByRef(int index)
         {
-            var simpleNode = m_root as StoreNode;
-
-            if (simpleNode != null)
+            if (m_root is StoreNode simpleNode)
             {
                 if (index >= simpleNode.m_size)
                 {
@@ -233,69 +294,11 @@ namespace Flexols.Data.Collections
 
                 throw new IndexOutOfRangeException();
             }
-            else
-            {
-                return ref m_root[index];
-            }
+
+            return ref m_root[index];
         }
 
-        public HybridList()
-        {
-            m_intialCapacity = SmallListCount;
-        }
-      
-        public HybridList(int capacity)
-        {
-            if (capacity < 0)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-
-            m_intialCapacity = 1 << (int)Math.Log(capacity < c_minCapacity ? 2.0 : (capacity > s_maxSizeOfArray ? s_maxSizeOfArray : capacity), 2.0);
-
-            if (m_intialCapacity > SmallListCount)
-            {
-                m_root = new StoreNode(s_maxSizeOfArray, m_intialCapacity);
-            }
-        }
-        
-        public HybridList(IEnumerable<T> enumerable)
-        {
-            if (enumerable is HybridList<T> hybridList)
-            {
-                m_intialCapacity = hybridList.Count;
-
-                CreateFromHybridList(hybridList);
-            }
-            else if (enumerable is IList<T> list)
-            {
-                var capacity = list.Count;
-
-                m_intialCapacity = 1 << (int)Math.Log(capacity < c_minCapacity ? 2.0 : (capacity > s_maxSizeOfArray ? s_maxSizeOfArray : capacity), 2.0);
-
-                if (m_intialCapacity > SmallListCount)
-                {
-                    m_root = new StoreNode(s_maxSizeOfArray, m_intialCapacity);
-                }
-
-                AddRange(list);
-            }
-            else
-            {
-                m_intialCapacity = s_maxSizeOfArray;
-
-                AddRange(enumerable);
-            }
-        }
-
-        public HybridList([NotNull] HybridList<T> source)
-        {
-            m_intialCapacity = source.Count;
-
-            CreateFromHybridList(source);
-        }
-
-        private void CreateFromHybridList(HybridList<T> source)
+        private void CreateFromList(HybridList<T> source)
         {
             if (source.m_root != null)
             {
@@ -360,7 +363,7 @@ namespace Flexols.Data.Collections
                 {
                     int index = lo + (hi - lo >> 1);
 
-                    int order = comparer.Compare(item, storeNode[index]);
+                    int order = comparer.Compare(item, storeNode.m_items[index]);
 
                     if (order == 0)
                     {
@@ -388,6 +391,85 @@ namespace Flexols.Data.Collections
                     int index = lo + (hi - lo >> 1);
 
                     int order = comparer.Compare(item, ValueByRef(index));
+
+                    if (order == 0)
+                    {
+                        return index;
+                    }
+
+                    if (order > 0)
+                    {
+                        lo = index + 1;
+                    }
+                    else
+                    {
+                        hi = index - 1;
+                    }
+                }
+                return ~lo;
+            }
+        }
+        
+        public int BinarySearch<V>(V value, int startIndex, int count, Func<V, T, int> comparer)
+        {
+            if (comparer == null)
+            {
+                throw new ArgumentNullException(nameof(comparer));
+            }
+
+            if (startIndex < 0 || startIndex >= m_count)
+            {
+                return -1;
+            }
+
+            if (count < 0 || count > m_count)
+            {
+                return -1;
+            }
+
+            if (startIndex >= count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
+            }
+
+            //common case
+            if (m_root is StoreNode storeNode)
+            {
+                int lo = startIndex;
+                int hi = count - 1;
+
+                while (lo <= hi)
+                {
+                    int index = lo + (hi - lo >> 1);
+
+                    int order = comparer(value, storeNode.m_items[index]);
+
+                    if (order == 0)
+                    {
+                        return index;
+                    }
+
+                    if (order > 0)
+                    {
+                        lo = index + 1;
+                    }
+                    else
+                    {
+                        hi = index - 1;
+                    }
+                }
+                return ~lo;
+            }
+            else
+            {
+                int lo = startIndex;
+                int hi = count - 1;
+
+                while (lo <= hi)
+                {
+                    int index = lo + (hi - lo >> 1);
+
+                    int order = comparer(value, ValueByRef(index));
 
                     if (order == 0)
                     {
@@ -438,12 +520,9 @@ namespace Flexols.Data.Collections
         }
 
         // ReSharper disable once UnusedMember.Global
-        public virtual int BinarySearch(T value)
+        public int BinarySearch(T value, int startIndex = 0)
         {
-            var startIndex = 0;
-            var endIndex = m_count - 1;
-
-            return BinarySearchCore(value, startIndex, endIndex, Comparer<T>.Default);
+            return BinarySearchCore(value, startIndex, m_count, Comparer<T>.Default);
         }
 
         public int IndexOf(T item, int startIndex = 0)
@@ -496,7 +575,7 @@ namespace Flexols.Data.Collections
             return IndexOf(item, 0);
         }
 
-        public virtual void Insert(int index, T item)
+        public void Insert(int index, T item)
         {
             if (m_root is StoreNode node)
             {
@@ -535,8 +614,7 @@ namespace Flexols.Data.Collections
                     }
 
                     node.m_items[index] = item;
-                    node.m_size = node.m_size + 1;
-
+                    node.m_size += 1;
 
                     m_count++;
                     m_version++;
@@ -559,7 +637,7 @@ namespace Flexols.Data.Collections
                         {
                             case 0:
                                 {
-                                    Tool.Swap(ref m_val0, ref item);
+                                    _.Swap(ref m_val0, ref item);
                                     Add(item);
                                     break;
                                 }
@@ -575,12 +653,12 @@ namespace Flexols.Data.Collections
                         switch (index)
                         {
                             case 0:
-                                Tool.Swap(ref m_val0, ref item);
-                                Tool.Swap(ref m_val1, ref item);
+                                _.Swap(ref m_val0, ref item);
+                                _.Swap(ref m_val1, ref item);
                                 Add(item);
                                 break;
                             case 1:
-                                Tool.Swap(ref m_val1, ref item);
+                                _.Swap(ref m_val1, ref item);
                                 Add(item);
                                 break;
                             case 2:
@@ -608,13 +686,113 @@ namespace Flexols.Data.Collections
 
         public void AddRange(IEnumerable<T> items)
         {
-            foreach (T obj in items)
+            if(items is HybridList<T> list)
             {
-                Add(obj);
+                var count = Count;
+
+                var newCount = count + list.Count;
+                
+                Ensure(newCount);
+
+                if (list.m_root is StoreNode sn && m_root is StoreNode thisSn)
+                {
+                    sn.m_items.CopyTo(thisSn.m_items, count);
+                }
+                else
+                {
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        ValueByRef(count + i) = list.ValueByRef(i);
+                    }
+                }
+            }
+            else if(items is T[] arr)
+            {
+                var count = Count;
+                
+                var newCount = count + arr.Length;
+                
+                Ensure(newCount);
+
+                if (m_root is StoreNode thisSn)
+                {
+                    arr.CopyTo(thisSn.m_items, count);
+                }
+                else
+                {
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        ValueByRef(count + i) = arr[i];
+                    }
+                }
+            }
+            else if(items is IReadOnlyList<T> rList)
+            {
+                var count = Count;
+                
+                var newCount = count + rList.Count;
+                
+                Ensure(newCount);
+
+                if (m_root is StoreNode thisSn)
+                {
+                    for (int i = 0; i < rList.Count; i++)
+                    {
+                        thisSn.m_items[count + i] = rList[i];
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < rList.Count; i++)
+                    {
+                        ValueByRef(count + i) = rList[i];
+                    }
+                }
+            }
+            else if(items is IReadOnlyCollection<T> rColl)
+            {
+                var count = Count;
+                
+                var newCount = count + rColl.Count;
+                
+                Ensure(newCount);
+
+                using var enumerator = rColl.GetEnumerator();
+                
+                if (m_root is StoreNode thisSn)
+                {
+                    for (int i = count; i < newCount; i++)
+                    {
+                        enumerator.MoveNext();
+                        
+                        thisSn.m_items[i] = enumerator.Current;
+                    }
+                }
+                else
+                {
+                    for (int i = count; i < newCount; i++)
+                    {
+                        enumerator.MoveNext();
+                    
+                        ValueByRef(i) = enumerator.Current;
+                    }
+                }
+            }
+            else
+            {
+                foreach (T obj in items)
+                {
+                    Add(obj);
+                }
             }
         }
 
-        public virtual void Add(T item)
+        public void Append(T item)
+        {
+            Add(item);
+        }
+
+        public void Add(T item)
         {
             if (m_root is StoreNode node)
             {
@@ -696,7 +874,7 @@ namespace Flexols.Data.Collections
             {
                 INode node1 = m_root;
                 INode node2;
-                if (!node1.Add(item, out node2))
+                if (!node1.Add(ref item, out node2))
                 {
                     m_root = new LinkNode(node1.Level + 1, s_maxSizeOfArray, node1, node2);
                 }
@@ -706,13 +884,12 @@ namespace Flexols.Data.Collections
             ++m_count;
         }
 
-        public void Ensure(int size, T defaultValue = default(T))
+        public void Ensure(int size, T defaultValue = default)
         {
             if (m_count > size)
             {
                 return;
             }
-
 
             if (m_root == null && size <= SmallListCount)
             {
@@ -747,13 +924,22 @@ namespace Flexols.Data.Collections
                     //common case
                     var storeNode = new StoreNode(s_maxSizeOfArray, size);
 
+                    int startIndex = 0;
+
                     if (m_count > 0)
                     {
                         storeNode.m_items[0] = m_val0;
-                        storeNode.m_items[1] = m_val1;
-
                         m_val0 = Default;
-                        m_val1 = Default;
+
+                        startIndex++;
+
+                        if (m_count > 1)
+                        {
+                            storeNode.m_items[1] = m_val1;
+                            m_val1 = Default;
+
+                            startIndex++;
+                        }
                     }
 
                     storeNode.m_size = Math.Min(s_maxSizeOfArray, size);
@@ -767,34 +953,43 @@ namespace Flexols.Data.Collections
 
                     if (setupDefaultValueForArray)
                     {
-                        for (int i = SmallListCount; i < storeNode.m_items.Length; i++)
-                        {
-                            storeNode.m_items[i] = defaultValue;
-                        }
+                        Array.Fill(storeNode.m_items, defaultValue, startIndex, m_count - startIndex);
                     }
 
-                    //not common case
-                    if (size > storeNode.m_items.Length)
+                    var restSize = size;
+
+                    while (restSize > 0)
                     {
-                        var toAdd = size - storeNode.m_items.Length;
-
-                        for (int i = 0; i < toAdd; i++)
+                        INode node1 = m_root;
+                        INode node2;
+                        if (node1.Ensure(ref restSize, ref defaultValue, out node2) == false)
                         {
-                            Add(defaultValue);
+                            m_root = new LinkNode(node1.Level + 1, s_maxSizeOfArray, node1, node2);
                         }
                     }
-
+                    
+                    m_count = size;
 
                     return;
                 }
             }
 
-            var toAddDefault = size - m_count;
-
-            for (int i = 0; i < toAddDefault; i++)
+            if (m_root != null)
             {
-                Add(defaultValue);
+                var toAddDefault = size;
+
+                while (toAddDefault > 0)
+                {
+                    INode node1 = m_root;
+                    INode node2;
+                    if (node1.Ensure(ref toAddDefault, ref defaultValue, out node2) == false)
+                    {
+                        m_root = new LinkNode(node1.Level + 1, s_maxSizeOfArray, node1, node2);
+                    }
+                }
             }
+
+            m_count = size;
         }
 
         int IList.Add(object value)
@@ -1042,7 +1237,7 @@ namespace Flexols.Data.Collections
             }
         }
 
-        private void RemoveLast()
+        public void RemoveLast()
         {
             if (m_root == null)
             {
@@ -1102,6 +1297,15 @@ namespace Flexols.Data.Collections
                     case 2: yield return m_val0; CheckState(ref version); yield return m_val1; break;
                  }
             }
+            else if (m_root is StoreNode storeNode)
+            {
+                for (int i = 0; i < m_count && i < storeNode.m_items.Length; i++)
+                {
+                    CheckState(ref version);
+
+                    yield return storeNode.m_items[i];
+                }
+            }
             else
             {
                 var enumerator = m_root.GetEnumerator();
@@ -1117,11 +1321,12 @@ namespace Flexols.Data.Collections
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CheckState(ref int version)
         {
             if (version != m_version)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Collection was modified.");
             }
         }
 
@@ -1194,7 +1399,7 @@ namespace Flexols.Data.Collections
                     {
                         if (comparison(list.m_val0 , list.m_val1) > 0)
                         {
-                            Tool.Swap(ref list.m_val0, ref list.m_val1);
+                            _.Swap(ref list.m_val0, ref list.m_val1);
                         }
                           
                         ++list.m_version;
@@ -1310,11 +1515,13 @@ namespace Flexols.Data.Collections
 
             ref T this[int index] { get; }
 
-            bool Add(T item, out INode node);
+            bool Add(ref T item, out INode node, int capacity = 16);
 
             void Clear();
 
             bool RemoveLast();
+
+            bool Ensure(ref int size, ref T defaultValue, out INode node);
         }
 
         [DebuggerDisplay("Link. Nodes: {m_nodes.Count}, Level: {Level}")]
@@ -1357,7 +1564,7 @@ namespace Flexols.Data.Collections
 
                 m_stepBase = (int)Math.Log(Math.Pow(c_intermediateCapacity, m_level - 1) * m_leafCapacity, 2);
 
-                m_nodes = new PoolListBase<INode>(int.MaxValue, 4);
+                m_nodes = new PoolListBase<INode>(int.MaxValue, 16);
                 m_nodes.Add(child1);
 
                 if (child2 != null)
@@ -1387,10 +1594,26 @@ namespace Flexols.Data.Collections
                 }
             }
 
-            public bool Add(T item, out INode node)
+            public bool Add(ref T item, out INode node, int capacity = 16)
             {
                 INode node1;
-                if (m_nodes[m_nodes.Count - 1].Add(item, out node1) == false)
+                if (m_nodes[m_nodes.Count - 1].Add(ref item, out node1, capacity) == false)
+                {
+                    if (m_nodes.m_size == c_intermediateCapacity)
+                    {
+                        node = new LinkNode(m_level, m_leafCapacity, node1);
+                        return false;
+                    }
+                    m_nodes.Add(node1);
+                }
+                node = this;
+                return true;
+            }
+            
+            public bool Ensure(ref int size, ref T defaultValue, out INode node)
+            {
+                INode node1;
+                if (m_nodes[m_nodes.Count - 1].Ensure(ref size, ref defaultValue, out node1) == false)
                 {
                     if (m_nodes.m_size == c_intermediateCapacity)
                     {
@@ -1426,6 +1649,8 @@ namespace Flexols.Data.Collections
 
                 return m_nodes.m_size == 0;
             }
+
+           
 
             public IEnumerator<T> GetEnumerator()
             {
@@ -1476,16 +1701,84 @@ namespace Flexols.Data.Collections
                 AddItem(item);
             }
 
-            public bool Add(T item, out INode node)
+            public bool Add(ref T item, out INode node, int capacity = 16)
             {
                 if (m_size == m_maxCapacity)
                 {
-                    node = new StoreNode(m_maxCapacity, 4, item);
+                    node = new StoreNode(m_maxCapacity, capacity, item);
                     return false;
                 }
                 AddItem(item);
                 node = this;
                 return true;
+            }
+
+            public bool Ensure(ref int size, ref T defaultValue, out INode node)
+            {
+                if (m_size == s_maxSizeOfArray)
+                {
+                    size -= s_maxSizeOfArray;
+                    
+                    var arraySize = Math.Min(size, s_maxSizeOfArray);
+
+                    node = new StoreNode(m_maxCapacity, arraySize) { m_size = arraySize };
+                    
+                    return false;
+                }
+                
+                if (size > m_size)
+                {
+                    if (size <= s_maxSizeOfArray)
+                    {
+                        Ensure(defaultValue, size);
+
+                        m_size = size;
+                        
+                        size = 0;
+
+                        node = this;
+
+                        return true;
+                    }
+
+                    Ensure(defaultValue, s_maxSizeOfArray);
+                    
+                    size -= m_size;
+
+                    m_size = s_maxSizeOfArray;
+                    
+                    var arraySize = Math.Min(size, s_maxSizeOfArray);
+
+                    node = new StoreNode(m_maxCapacity, arraySize) { m_size = arraySize };
+                    
+                    return false;
+                }
+                
+                size -= m_size;
+
+                node = this;
+                return true;
+            }
+
+            private void Ensure(T defaultValue, int newSize)
+            {
+                T[] vals = ArrayPool<T>.Shared.Rent(newSize);
+
+                Array.Clear(vals, 0, vals.Length);
+
+                Array.Copy(m_items, 0, vals, 0, m_size);
+
+                ArrayPool<T>.Shared.Return(m_items, clearArray: true);
+
+                m_items = vals;
+
+                var setupDefaultValueForArray =
+                    EqualityComparer<T>.Default.Equals(defaultValue, Default) == false;
+
+                if (setupDefaultValueForArray)
+                {
+                    Array.Fill(m_items, defaultValue, m_size, newSize - m_size);
+                }
             }
         }
 
@@ -1583,7 +1876,43 @@ namespace Flexols.Data.Collections
 
             return -1;
         }
+        
+        public int FindLastIndex<V>(V value, Func<T, V> valueSelector, int end = int.MinValue)
+        {
+            return FindLastIndex<V>(value, valueSelector, EqualityComparer<V>.Default, end);
+        }
+        
+        public int FindLastIndex<V>(V value, Func<T, V> valueSelector, IEqualityComparer<V> equalityComparer, int end = int.MinValue)
+        {
+            if (end >= m_count)
+            {
+                return -1;
+            }
+            
+            if (end == int.MinValue)
+            {
+                end = m_count - 1;
+            }
+            
+            if (equalityComparer == null)
+            {
+                throw new ArgumentNullException(nameof(equalityComparer));
+            }
 
+            for (int index = end; index >= 0; --index)
+            {
+                var valueByRef = ValueByRef(index);
+
+                var selector = valueSelector(valueByRef);
+
+                if (equalityComparer.Equals(selector, value))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
 
         ~HybridList()
         {
@@ -1605,79 +1934,6 @@ namespace Flexols.Data.Collections
 
                 m_isDisposed = true;
             }
-        }
-    }
-
-    public static class HybridListExtensions
-    {
-        public static HybridList<T> ToHybridList<T>(this IList<T> source)
-        {
-            return new HybridList<T>(source);
-        }
-
-        public static HybridList<T> ToHybridList<T>(this IEnumerable<T> source)
-        {
-            return new HybridList<T>(source);
-        }
-
-        public static HybridList<T> ToHybridList<T>(this HybridList<T> source)
-        {
-            return new HybridList<T>(source);
-        }
-
-        public static void DisposeList<T>(this HybridList<T> list)
-        {
-            if (list != null)
-            {
-                if (list is IDisposable d)
-                {
-                    d.Dispose();
-                }
-                else
-                {
-                    list.Clear();
-                }
-            }
-        }
-
-        public static void DisposeBitArray(this HybridBitArray array)
-        {
-            if (array != null)
-            {
-                if (array is IDisposable d)
-                {
-                    d.Dispose();
-                }
-                else
-                {
-                    array.Clear();
-                }
-            }
-        }
-
-        public static void DisposeHashset<T>(this HybridHashSet<T> array)
-        {
-            if (array != null)
-            {
-                if (array is IDisposable d)
-                {
-                    d.Dispose();
-                }
-                else
-                {
-                    array.Clear();
-                }
-            }
-        }
-
-        public static bool ListNullOrItemAbsent<T>(this IReadOnlyCollection<T> source, T value)
-        {
-            return source == null || !source.Contains(value);
-        }
-
-        public static HybridHashSet<T> ToHybridHashSet<T>(this IEnumerable<T> source, IEqualityComparer<T> comparer = null)
-        {
-            return new HybridHashSet<T>(source, comparer);
         }
     }
 }

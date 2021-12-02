@@ -2,88 +2,155 @@
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Security;
 using System.Security.Permissions;
 
 namespace Flexols.Data.Collections
 {
-    public class HybridHashSet<T> : ICollection<T>, IReadOnlyCollection<T>
+    public class HybridHashSet<T> : ICollection<T>, IReadOnlyCollection<T>, IAppender<T>
     {
-        private static readonly int[] s_primes = new int[72]
+        public static HybridHashSet<T> operator +(HybridHashSet<T> a, IReadOnlyCollection<T> b)
         {
-            3,
-            7,
-            11,
-            17,
-            23,
-            29,
-            37,
-            47,
-            59,
-            71,
-            89,
-            107,
-            131,
-            163,
-            197,
-            239,
-            293,
-            353,
-            431,
-            521,
-            631,
-            761,
-            919,
-            1103,
-            1327,
-            1597,
-            1931,
-            2333,
-            2801,
-            3371,
-            4049,
-            4861,
-            5839,
-            7013,
-            8419,
-            10103,
-            12143,
-            14591,
-            17519,
-            21023,
-            25229,
-            30293,
-            36353,
-            43627,
-            52361,
-            62851,
-            75431,
-            90523,
-            108631,
-            130363,
-            156437,
-            187751,
-            225307,
-            270371,
-            324449,
-            389357,
-            467237,
-            560689,
-            672827,
-            807403,
-            968897,
-            1162687,
-            1395263,
-            1674319,
-            2009191,
-            2411033,
-            2893249,
-            3471899,
-            4166287,
-            4999559,
-            5999471,
-            7199369
+            if (ReferenceEquals(a, null))
+            {
+                return b?.ToHybridHashSet();
+            }
+            
+            if (ReferenceEquals(b, null))
+            {
+                return a?.ToHybridHashSet();
+            }
+
+            var set = new HybridHashSet<T>(a.Count + b.Count, a.m_comparer);
+            
+            set.AddRange(a);
+            set.AddRange(b);
+
+            return set;
+        }
+        
+        public static HybridHashSet<T> operator -(HybridHashSet<T> a, IReadOnlyCollection<T> b)
+        {
+            if (ReferenceEquals(a, null))
+            {
+                return null;
+            }
+            
+            if (ReferenceEquals(b, null))
+            {
+                return a.ToHybridHashSet();
+            }
+
+            var list = new HybridHashSet<T>(Math.Max(a.Count - b.Count, 0), a.m_comparer);
+            
+            foreach (var item in a)
+            {
+                if (!(b.Contains(item)))
+                {
+                    list.Add(item);
+                }
+            }
+
+            return list;
+        }
+        
+        public static bool operator ==(HybridHashSet<T> a, IReadOnlyCollection<T> b)
+        {
+            if (RuntimeHelpers.Equals(a, b))
+                return true;
+
+            if ((object) a == null || (object) b == null)
+                return false;
+
+            return a.EqualsSet(b);
+        }
+    
+        public static bool operator !=(HybridHashSet<T> a, IReadOnlyCollection<T> b)
+        {
+            if (RuntimeHelpers.Equals(a, b))
+                return false;
+
+            if ((object)a == null || (object)b == null)
+                return true;
+
+            return !(a.EqualsSet(b));
+        }
+        
+        protected bool EqualsSet(IReadOnlyCollection<T> other)
+        {
+            if (m_count == other.Count)
+            {
+                foreach (var item in other)
+                {
+                    if (!this.Contains(item))
+                    {
+                        return false;
+                    }
+                }
+
+                foreach (var item in this)
+                {
+                    if (!other.Contains(item))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+            
+            return EqualsSet((HybridList<T>) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = 3 ^ m_count.GetHashCode();
+
+                foreach (var item in this)
+                {
+                    hashCode = (hashCode * 397) ^ EqualityComparer<T>.Default.GetHashCode(item);
+                }
+              
+                return hashCode;
+            }
+        }
+        
+        private static readonly int[] s_primes = new int[]
+        {
+            HybridList<int>.SmallListCount,
+            509,
+            1021,
+            2039,
+            4091,
+            8191,
+            131071,
+            524287,
+            2946901
         };
 
         private const string CapacityName = "Capacity";
@@ -96,11 +163,12 @@ namespace Flexols.Data.Collections
 
         private int m_count;
         private int m_lastIndex;
-        private int? m_freeList;
+        private int m_freeList;
         private IEqualityComparer<T> m_comparer;
         private SerializationInfo m_siInfo;
 
         private static readonly bool IsReferenceType = typeof(T).IsByRef;
+        private int m_version;
 
         /// <summary>Initializes a new instance of the <see cref="T:System.Collections.Generic.HashSet`1" /> class that is empty and uses the default equality comparer for the set type.</summary>
         public HybridHashSet()
@@ -117,7 +185,7 @@ namespace Flexols.Data.Collections
         {
             if (comparer == null)
             {
-                comparer = (IEqualityComparer<T>)EqualityComparer<T>.Default;
+                comparer = EqualityComparer<T>.Default;
             }
             m_comparer = comparer;
             m_lastIndex = 0;
@@ -126,7 +194,12 @@ namespace Flexols.Data.Collections
         }
 
         public HybridHashSet(IEnumerable<T> collection)
-          : this(collection, (IEqualityComparer<T>)EqualityComparer<T>.Default)
+          : this(collection, EqualityComparer<T>.Default)
+        {
+        }
+        
+        public HybridHashSet(HybridHashSet<T> collection)
+            : this(collection, collection.m_comparer ?? EqualityComparer<T>.Default)
         {
         }
 
@@ -148,6 +221,11 @@ namespace Flexols.Data.Collections
 
                 UnionWith(collection);
             }
+        }
+        
+        public void Append(T item)
+        {
+            Add(item);
         }
 
         private static int ExpandPrime(int oldSize)
@@ -245,9 +323,6 @@ namespace Flexols.Data.Collections
             m_count = count;
         }
 
-        /// <summary>Initializes a new instance of the <see cref="T:System.Collections.Generic.HashSet`1" /> class with serialized data.</summary>
-        /// <param name="info">A <see cref="T:System.Runtime.Serialization.SerializationInfo" /> object that contains the information required to serialize the <see cref="T:System.Collections.Generic.HashSet`1" /> object.</param>
-        /// <param name="context">A <see cref="T:System.Runtime.Serialization.StreamingContext" /> structure that contains the source and destination of the serialized stream associated with the <see cref="T:System.Collections.Generic.HashSet`1" /> object.</param>
         protected HybridHashSet(SerializationInfo info, StreamingContext context)
         {
             m_siInfo = info;
@@ -272,7 +347,7 @@ namespace Flexols.Data.Collections
        
         void ICollection<T>.Add(T item)
         {
-            AddIfNotPresent(item);
+            Add(item);
         }
 
         /// <summary>Removes all elements from a <see cref="T:System.Collections.Generic.HashSet`1" /> object.</summary>
@@ -287,18 +362,21 @@ namespace Flexols.Data.Collections
 
             m_lastIndex = 0;
             m_count = 0;
-            m_freeList = null;
+            m_freeList = -1;
+            
+            ++m_version;
         }
 
-        /// <summary>Determines whether a <see cref="T:System.Collections.Generic.HashSet`1" /> object contains the specified element.</summary>
-        /// <param name="item">The element to locate in the <see cref="T:System.Collections.Generic.HashSet`1" /> object.</param>
-        /// <returns>
-        /// <see langword="true" /> if the <see cref="T:System.Collections.Generic.HashSet`1" /> object contains the specified element; otherwise, <see langword="false" />.</returns>
+        public bool IsMissing(T item)
+        {
+            return !Contains(item);
+        }
+        
         public bool Contains(T item)
         {
             if (m_buckets != null)
             {
-                int hashCode = InternalGetHashCode(item);
+                int hashCode = IsReferenceType && item == null ? 0 : m_comparer.GetHashCode(item) & int.MaxValue;
 
                 if (m_slots.m_root is HybridList<Slot>.StoreNode storeNode)
                 {
@@ -306,7 +384,9 @@ namespace Flexols.Data.Collections
 
                     for (int? index = start - 1; index >= 0; index = storeNode.m_items[index.Value].next)
                     {
-                        if (storeNode.m_items[index.Value].hashCode == hashCode && m_comparer.Equals(storeNode.m_items[index.Value].value, item))
+                        ref var slot = ref storeNode.m_items[index.Value];
+                        
+                        if (slot.hashCode == hashCode && m_comparer.Equals(slot.value, item))
                         {
                             return true;
                         }
@@ -318,7 +398,7 @@ namespace Flexols.Data.Collections
 
                     for (int? index = start - 1; index >= 0; index = m_slots.ValueByRef(index.Value).next)
                     {
-                        var slot = m_slots.ValueByRef(index.Value);
+                        ref var slot = ref m_slots.ValueByRef(index.Value);
 
                         if (slot.hashCode == hashCode && m_comparer.Equals(slot.value, item))
                         {
@@ -330,55 +410,39 @@ namespace Flexols.Data.Collections
             return false;
         }
 
-        /// <summary>Copies the elements of a <see cref="T:System.Collections.Generic.HashSet`1" /> object to an array, starting at the specified array index.</summary>
-        /// <param name="array">The one-dimensional array that is the destination of the elements copied from the <see cref="T:System.Collections.Generic.HashSet`1" /> object. The array must have zero-based indexing.</param>
-        /// <param name="arrayIndex">The zero-based index in <paramref name="array" /> at which copying begins.</param>
-        /// <exception cref="T:System.ArgumentNullException">
-        /// <paramref name="array" /> is <see langword="null" />.</exception>
-        /// <exception cref="T:System.ArgumentOutOfRangeException">
-        /// <paramref name="arrayIndex" /> is less than 0.</exception>
-        /// <exception cref="T:System.ArgumentException">
-        /// <paramref name="arrayIndex" /> is greater than the length of the destination <paramref name="array" />.</exception>
         public void CopyTo(T[] array, int arrayIndex)
         {
             CopyTo(array, arrayIndex, m_count);
         }
 
-        /// <summary>Removes the specified element from a <see cref="T:System.Collections.Generic.HashSet`1" /> object.</summary>
-        /// <param name="item">The element to remove.</param>
-        /// <returns>
-        /// <see langword="true" /> if the element is successfully found and removed; otherwise, <see langword="false" />.  This method returns <see langword="false" /> if <paramref name="item" /> is not found in the <see cref="T:System.Collections.Generic.HashSet`1" /> object.</returns>
-       
         public bool Remove(T item)
         {
             if (m_buckets != null)
             {
-                int hashCode = InternalGetHashCode(item);
+                int hashCode = InternalGetHashCode(ref item);
                 int index1 = hashCode % m_buckets.Count;
-                int i = -1;
+                int last = -1;
 
                 var start = m_buckets.ValueByRef(index1);
 
-                for (int? index = start - 1; index >= 0; index = m_slots.ValueByRef(index.Value).next)
+                for (int index = start - 1; index >= 0; index = m_slots.ValueByRef(index).next)
                 {
-                    var slot = m_slots.ValueByRef(index.Value);
+                    ref var currentEntry = ref m_slots.ValueByRef(index);
 
-                    if (slot.hashCode == hashCode && m_comparer.Equals(slot.value, item))
+                    if (currentEntry.hashCode == hashCode && m_comparer.Equals(currentEntry.value, item))
                     {
-                        if (i < 0)
+                        if (last < 0)
                         {
-                            m_buckets.ValueByRef(index1) = (slot.next ?? 0) + 1;
+                            m_buckets.ValueByRef(index1) = currentEntry.next  + 1;
                         }
                         else
                         {
-                            m_slots.ValueByRef(i).next = slot.next;
+                            m_slots.ValueByRef(last).next = currentEntry.next;
                         }
 
-                        slot.hashCode = -1;
-                        slot.value = default(T);
-                        slot.next = m_freeList;
-
-                        m_slots.ValueByRef(index.Value) = slot;
+                        currentEntry.hashCode = -1;
+                        currentEntry.value = default(T);
+                        currentEntry.next = m_freeList;
 
                         --m_count;
 
@@ -394,30 +458,48 @@ namespace Flexols.Data.Collections
 
                         return true;
                     }
-                    i = index.Value;
+                    last = index;
                 }
             }
             return false;
         }
 
-        /// <summary>Gets the number of elements that are contained in a set.</summary>
-        /// <returns>The number of elements that are contained in the set.</returns>
-       
         public int Count => m_count;
-
 
         bool ICollection<T>.IsReadOnly => false;
 
-        /// <summary>Returns an enumerator that iterates through a <see cref="T:System.Collections.Generic.HashSet`1" /> object.</summary>
-        /// <returns>A <see cref="T:System.Collections.Generic.HashSet`1.Enumerator" /> object for the <see cref="T:System.Collections.Generic.HashSet`1" /> object.</returns>
-
         public IEnumerable<T> Values()
         {
-            for (int i = 0; i < m_lastIndex; ++i)
+            var version = m_version;
+            
+            if (m_slots?.m_root is HybridList<Slot>.StoreNode storeNode)
             {
-                if (m_slots.ValueByRef(i).hashCode >= 0)
+                for (int i = 0; i < m_lastIndex; ++i)
                 {
-                    yield return m_slots.ValueByRef(i).value;
+                    if (storeNode.m_items[i].hashCode >= 0)
+                    {
+                        if (version != m_version)
+                        {
+                            throw new InvalidOperationException();
+                        }
+                        
+                        yield return storeNode.m_items[i].value;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < m_lastIndex; ++i)
+                {
+                    if (m_slots.ValueByRef(i).hashCode >= 0)
+                    {
+                        if (version != m_version)
+                        {
+                            throw new InvalidOperationException();
+                        }
+                        
+                        yield return m_slots.ValueByRef(i).value;
+                    }
                 }
             }
         }
@@ -426,18 +508,12 @@ namespace Flexols.Data.Collections
         {
             return Values().GetEnumerator();
         }
-
        
         IEnumerator IEnumerable.GetEnumerator()
         {
             return Values().GetEnumerator();
         }
 
-        /// <summary>Implements the <see cref="T:System.Runtime.Serialization.ISerializable" /> interface and returns the data needed to serialize a <see cref="T:System.Collections.Generic.HashSet`1" /> object.</summary>
-        /// <param name="info">A <see cref="T:System.Runtime.Serialization.SerializationInfo" /> object that contains the information required to serialize the <see cref="T:System.Collections.Generic.HashSet`1" /> object.</param>
-        /// <param name="context">A <see cref="T:System.Runtime.Serialization.StreamingContext" /> structure that contains the source and destination of the serialized stream associated with the <see cref="T:System.Collections.Generic.HashSet`1" /> object.</param>
-        /// <exception cref="T:System.ArgumentNullException">
-        /// <paramref name="info" /> is <see langword="null" />.</exception>
         [SecurityCritical]
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.SerializationFormatter)]
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -489,7 +565,7 @@ namespace Flexols.Data.Collections
             
                 for (int index = 0; index < objArray.Length; ++index)
                 {
-                    AddIfNotPresent(objArray[index]);
+                    Add(objArray[index]);
                 }
             }
             else
@@ -500,31 +576,8 @@ namespace Flexols.Data.Collections
             m_siInfo = (SerializationInfo)null;
         }
 
-        /// <summary>Adds the specified element to a set.</summary>
-        /// <param name="item">The element to add to the set.</param>
-        /// <returns>
-        /// <see langword="true" /> if the element is added to the <see cref="T:System.Collections.Generic.HashSet`1" /> object; <see langword="false" /> if the element is already present.</returns>
        
-        public bool Add(T item)
-        {
-            return AddIfNotPresent(item);
-        }
 
-        public bool TryGetValue(T equalValue, out T actualValue)
-        {
-            if (m_buckets != null)
-            {
-                int index = InternalIndexOf(equalValue);
-                if (index >= 0)
-                {
-                    actualValue = m_slots.ValueByRef(index).value;
-                    return true;
-                }
-            }
-            actualValue = default(T);
-            return false;
-        }
-       
         public void UnionWith(IEnumerable<T> other)
         {
             if (other == null)
@@ -534,7 +587,7 @@ namespace Flexols.Data.Collections
 
             foreach (T obj in other)
             {
-                AddIfNotPresent(obj);
+                Add(obj);
             }
         }
 
@@ -585,9 +638,7 @@ namespace Flexols.Data.Collections
             }
             return ContainsAllElements(other);
         }
-
-       
-
+        
         public bool Overlaps(IEnumerable<T> other)
         {
             if (other == null)
@@ -609,29 +660,12 @@ namespace Flexols.Data.Collections
             return false;
         }
 
-        /// <summary>Copies the elements of a <see cref="T:System.Collections.Generic.HashSet`1" /> object to an array.</summary>
-        /// <param name="array">The one-dimensional array that is the destination of the elements copied from the <see cref="T:System.Collections.Generic.HashSet`1" /> object. The array must have zero-based indexing.</param>
-        /// <exception cref="T:System.ArgumentNullException">
-        /// <paramref name="array" /> is <see langword="null" />.</exception>
-      
+       
         public void CopyTo(T[] array)
         {
             CopyTo(array, 0, m_count);
         }
 
-        /// <summary>Copies the specified number of elements of a <see cref="T:System.Collections.Generic.HashSet`1" /> object to an array, starting at the specified array index.</summary>
-        /// <param name="array">The one-dimensional array that is the destination of the elements copied from the <see cref="T:System.Collections.Generic.HashSet`1" /> object. The array must have zero-based indexing.</param>
-        /// <param name="arrayIndex">The zero-based index in <paramref name="array" /> at which copying begins.</param>
-        /// <param name="count">The number of elements to copy to <paramref name="array" />.</param>
-        /// <exception cref="T:System.ArgumentNullException">
-        /// <paramref name="array" /> is <see langword="null" />.</exception>
-        /// <exception cref="T:System.ArgumentOutOfRangeException">
-        /// <paramref name="arrayIndex" /> is less than 0.-or-
-        /// <paramref name="count" /> is less than 0.</exception>
-        /// <exception cref="T:System.ArgumentException">
-        /// <paramref name="arrayIndex" /> is greater than the length of the destination <paramref name="array" />.-or-
-        /// <paramref name="count" /> is greater than the available space from the <paramref name="index" /> to the end of the destination <paramref name="array" />.</exception>
-       
         public void CopyTo(T[] array, int arrayIndex, int count)
         {
             if (array == null)
@@ -653,6 +687,7 @@ namespace Flexols.Data.Collections
             {
                 throw new ArgumentException("Arg_ArrayPlusOffTooSmall");
             }
+            
             int num = 0;
             for (int index = 0; index < m_lastIndex && num < count; ++index)
             {
@@ -687,23 +722,9 @@ namespace Flexols.Data.Collections
             return num;
         }
 
-        /// <summary>Gets the <see cref="T:System.Collections.Generic.IEqualityComparer`1" /> object that is used to determine equality for the values in the set.</summary>
-        /// <returns>The <see cref="T:System.Collections.Generic.IEqualityComparer`1" /> object that is used to determine equality for the values in the set.</returns>
-       
+      
         public IEqualityComparer<T> Comparer => m_comparer;
 
-        /// <summary>Sets the capacity of a <see cref="T:System.Collections.Generic.HashSet`1" /> object to the actual number of elements it contains, rounded up to a nearby, implementation-specific value.</summary>
-    
-        public void TrimExcess()
-        {
-        }
-
-        /// <summary>Returns an <see cref="T:System.Collections.IEqualityComparer" /> object that can be used for equality testing of a <see cref="T:System.Collections.Generic.HashSet`1" /> object.</summary>
-        /// <returns>An <see cref="T:System.Collections.IEqualityComparer" /> object that can be used for deep equality testing of the <see cref="T:System.Collections.Generic.HashSet`1" /> object.</returns>
-        public static IEqualityComparer<HybridHashSet<T>> CreateSetComparer()
-        {
-            return new HashSetEqualityComparer<T>();
-        }
 
         [Serializable]
         internal class HashSetEqualityComparer<T> : IEqualityComparer<HybridHashSet<T>>
@@ -770,6 +791,8 @@ namespace Flexols.Data.Collections
 
             m_buckets.Ensure(prime);
             m_slots.Ensure(prime);
+            
+            m_freeList = -1;
         }
 
         private void IncreaseCapacity()
@@ -787,22 +810,28 @@ namespace Flexols.Data.Collections
 
             for (int slotIndex = 0; slotIndex < m_lastIndex; ++slotIndex)
             {
-                int bucketIndex = m_slots[slotIndex].hashCode % newSize;
+                ref var slot = ref m_slots.ValueByRef(slotIndex);
+                
+                int bucketIndex = slot.hashCode % newSize;
 
-                m_slots.ValueByRef(slotIndex).next = m_buckets.ValueByRef(bucketIndex) - 1;
+                slot.next = m_buckets.ValueByRef(bucketIndex) - 1;
 
                 m_buckets.ValueByRef(bucketIndex) = slotIndex + 1;
             }
         }
 
-        private bool AddIfNotPresent(T value)
+        /// <summary>Adds the specified element to a set.</summary>
+        /// <param name="item">The element to add to the set.</param>
+        /// <returns>
+        /// <see langword="true" /> if the element is added to the <see cref="T:System.Collections.Generic.HashSet`1" /> object; <see langword="false" /> if the element is already present.</returns>
+        public bool Add(T value)
         {
             if (m_buckets == null)
             {
                 Initialize(0);
             }
 
-            int hashCode = InternalGetHashCode(value);
+            int hashCode = InternalGetHashCode(ref value);
             int storageIndex = hashCode % m_buckets.Count;
             int num = 0;
 
@@ -810,7 +839,7 @@ namespace Flexols.Data.Collections
 
             for (int? i = start - 1; i >= 0; i = m_slots.ValueByRef(i.Value).next)
             {
-                var s = m_slots.ValueByRef(i.Value);
+                ref var s = ref m_slots.ValueByRef(i.Value);
 
                 if (s.hashCode == hashCode && m_comparer.Equals(s.value, value))
                 {
@@ -822,7 +851,7 @@ namespace Flexols.Data.Collections
             int index;
             if (m_freeList >= 0)
             {
-                index = m_freeList.Value;
+                index = m_freeList;
                 m_freeList = m_slots.ValueByRef(index).next;
             }
             else
@@ -838,16 +867,16 @@ namespace Flexols.Data.Collections
 
             var bucket = m_buckets.ValueByRef(storageIndex);
 
-            var slot = m_slots.ValueByRef(index);
+            ref var slot = ref m_slots.ValueByRef(index);
 
             slot.hashCode = hashCode;
             slot.value = value;
-            slot.next = bucket == 0 ? new int?() : bucket - 1;
+            slot.next = bucket - 1;
 
-            m_slots.ValueByRef(index) = slot;
             m_buckets.ValueByRef(storageIndex) = index + 1;
 
             ++m_count;
+            ++m_version;
           
             return true;
         }
@@ -858,13 +887,12 @@ namespace Flexols.Data.Collections
 
             var bucket = m_buckets.ValueByRef(storageIndex);
 
-            var slot = m_slots.ValueByRef(index);
+            ref var slot = ref m_slots.ValueByRef(index);
 
             slot.hashCode = hashCode;
             slot.value = value;
             slot.next = bucket - 1;
 
-            m_slots.ValueByRef(index) = slot;
             m_buckets.ValueByRef(storageIndex) = index + 1;
         }
 
@@ -880,24 +908,6 @@ namespace Flexols.Data.Collections
             return true;
         }
 
-        private int InternalIndexOf(T item)
-        {
-            int hashCode = InternalGetHashCode(item);
-
-            var start = m_buckets.ValueByRef(hashCode % m_buckets.Count);
-
-            for (int? index = start - 1; index >= 0; index = m_slots.ValueByRef(index.Value).next)
-            {
-                var slot = m_slots.ValueByRef(index.Value);
-
-                if (slot.hashCode == hashCode && m_comparer.Equals(slot.value, item))
-                {
-                    return index.Value;
-                }
-            }
-            return -1;
-        }
-        
         internal static bool HashSetEquals(HybridHashSet<T> set1, HybridHashSet<T> set2, IEqualityComparer<T> comparer)
         {
             if (set1 == null)
@@ -950,7 +960,7 @@ namespace Flexols.Data.Collections
             return set1.Comparer.Equals((object)set2.Comparer);
         }
 
-        private int InternalGetHashCode(T item)
+        private int InternalGetHashCode(ref T item)
         {
             if (IsReferenceType)
             {
@@ -962,15 +972,10 @@ namespace Flexols.Data.Collections
             return m_comparer.GetHashCode(item) & int.MaxValue;
         }
 
-        internal struct ElementCount
-        {
-            internal int uniqueCount;
-        }
-
         internal struct Slot
         {
             internal int hashCode;
-            internal int? next;
+            internal int next;
             internal T value;
 
             public override string ToString()

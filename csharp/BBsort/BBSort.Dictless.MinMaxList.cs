@@ -1,13 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using BBsort.Collections;
 using Flexols.Data.Collections;
 
 namespace BBsort.DictLess.MinMaxList
 {
+    public static class LogHelper
+    {
+        [StructLayout(LayoutKind.Explicit)]
+        private struct ConverterStruct
+        {
+            [FieldOffset(0)] public int x;
+            [FieldOffset(0)] public float val;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float fastLog2(float val)
+        {
+            ConverterStruct u;
+            u.x = 0; u.val = val;
+
+            float lg2 = (float)(((u.x >> 23) & 255) - 128);
+            u.x &= ~(255 << 23);
+            u.x += 127 << 23;
+            return lg2 + ((-0.3358287811f) * u.val + 2.0f) * u.val - 0.65871759316667f;
+        }
+    }
+
     public class BBSort<T>  where T : struct, IComparable<T>
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+        public static float getLog(float x)
+        {
+
+            var abs = Math.Abs(x);
+            if (abs < 2)
+            {
+                return x;
+            }
+            var lg = LogHelper.fastLog2(abs);
+            return (float)(x < 0 ? -lg : lg);
+        }
+        
+        public static float getLog(int x)
+        {
+
+            var abs = Math.Abs(x);
+            if (abs < 2)
+            {
+                return x;
+            }
+            var lg = LogHelper.fastLog2(abs);
+            return (float)(x < 0 ? -lg : lg);
+        }
+        
         Func<T, float> m_getLog;
 
         public BBSort(Func<T, float> getLog)
@@ -46,11 +95,8 @@ namespace BBsort.DictLess.MinMaxList
             return (0.0f, 0.0f);
         }
 
-        void getBuckets(ref T min, ref T max, MinMaxMidList<T> items, PoolList<MinMaxMidList<T>> buckets, int count)
+        void getBuckets(ref float minLog, ref float maxLog, MinMaxMidList<T> items, PoolList<MinMaxMidList<T>> buckets, int count)
         {
-            var minLog = m_getLog(min);
-            var maxLog = m_getLog(max);
-
             var (a, b) = GetLinearTransformParams(minLog, maxLog, 0, count - 1);
 
             var cnt = items.Storage.Count;
@@ -64,7 +110,7 @@ namespace BBsort.DictLess.MinMaxList
 
                 if (bucket == null)
                 {
-                    const int maxCapacity = int.MaxValue;
+                    const int maxCapacity = 1024 * 1024;
                     const int arraySize = 2;
                     buckets[index] = bucket = new MinMaxMidList<T>(new PoolList<T>(maxCapacity, arraySize));
                 }
@@ -78,6 +124,8 @@ namespace BBsort.DictLess.MinMaxList
             int index)
         {
             output[index] = top.Min;
+            
+            //Cases += 1;
 
             return 1;
         }
@@ -88,10 +136,12 @@ namespace BBsort.DictLess.MinMaxList
         {
             var topCount = top.Storage.Count;
             
-            for (int i = 0; i < topCount && i < output.Length; ++i)
+            for (int i = 0; i < topCount && index + i < output.Length; ++i)
             {
                 output[index + i] = top.Min;
             }
+            
+            //Cases += topCount;
 
             return topCount;
         }
@@ -104,6 +154,8 @@ namespace BBsort.DictLess.MinMaxList
             output[index]     = top.Min;
             output[index + 1] = top.Max;
 
+            //Cases += 2;
+            
             return 2;
         }
 
@@ -116,28 +168,52 @@ namespace BBsort.DictLess.MinMaxList
             output[index + 1] = top.Mid;
             output[index + 2] = top.Max;
 
+           // Cases += 3;
+
             return 3;
         }
+        
+        public static int BuildInSortsCount = 0;
+        public static int Cases = 0;
 
         int caseN(Stack<MinMaxMidList<T>> st,
             MinMaxMidList<T> top,
                       T[] output,
                       int index)
         {
-            if (top.Min.CompareTo(top.Max) == 0)
+            var minLog = m_getLog(top.Min);
+            var maxLog = m_getLog(top.Max);
+
+            if (maxLog - minLog < 0.1f)
             {
-                return caseAllDuplicates(top, output, index);
+                if (top.Min.CompareTo(top.Max) == 0)
+                {
+                    return caseAllDuplicates(top, output, index);
+                }
+                
+                var topCount = top.Storage.Count;
+            
+                Array.Sort(top.Storage.m_items, 0, top.Storage.Count);
+                
+                for (int i = 0; i < topCount && i + index < output.Length && i < top.Storage.m_items.Length; ++i)
+                {
+                    output[index + i] = top.Storage.m_items[i];
+                }
+
+                //BuildInSortsCount += top.Storage.Count;
+
+                return topCount;
             }
 
             var count = (top.Storage.Count / 2) + 1;
 
             var newBuckets = new PoolList<MinMaxMidList<T>>(count, count, count);
 
-            getBuckets(ref top.Min, ref top.Max, top, newBuckets, count);
+            getBuckets(ref minLog, ref maxLog, top, newBuckets, count);
 
             for (int i = newBuckets.Count - 1; i >= 0; --i)
             {
-                var minMaxHeap = newBuckets[i];
+                var minMaxHeap = newBuckets.m_items[i];
                 
                 if (minMaxHeap != null)
                 {
@@ -190,7 +266,7 @@ namespace BBsort.DictLess.MinMaxList
                 return;
             }
 
-            var bucketCount = Math.Min(array.Length, 128);
+            var bucketCount = Math.Min(array.Length, 1024);
             
             var buckets = new PoolList<MinMaxMidList<T>>(bucketCount, bucketCount, bucketCount);
 
@@ -204,20 +280,20 @@ namespace BBsort.DictLess.MinMaxList
                 // ApplyLinearTransform
                 int index = (int)((a * m_getLog(array[i]) + b));
                 index = Math.Min(bucketCount - 1, index);
-                var bucket = buckets[index];
+                var bucket = buckets.m_items[index];
 
                 if (bucket == null)
                 {
-                    const int maxCapacity = int.MaxValue;
+                    const int maxCapacity = 1024 * 1024;
                     const int arraySize = 2;
-                    buckets[index] = bucket = new MinMaxMidList<T>(new PoolList<T>(maxCapacity, arraySize));
+                    buckets.m_items[index] = bucket = new MinMaxMidList<T>(new PoolList<T>(maxCapacity, arraySize));
                 }
                 bucket.Add(array[i]);
             }
 
             for (int i = buckets.Count - 1; i >= 0; --i)
             {
-                var minMaxHeap = buckets[i];
+                var minMaxHeap = buckets.m_items[i];
                 
                 if (minMaxHeap != null)
                 {
