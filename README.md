@@ -173,6 +173,10 @@ Next steps in performance optimizations show that building that heap is very exp
 
 Also, we can preserve the ```size equals 3``` case by adding ```mid``` field to our minMax vector and handle that special case there.
 
+# Pragmatic version
+
+As practice shown, we also require to cover a case when log values are only slightly different. For that case we cannot continue to bb-sorting and fall back to builtin sorting routine. Nevertheless, we are still doing up to 10 percent better.
+
 # Performance 
 
 C++20 implementation of BB sort was compared to QSort rand algorithm taken from the Rosettacode code base website.
@@ -270,34 +274,33 @@ std::vector<T> sample(std::vector<T> population, long long count){
 
 
 <details>
-		<summary> C# Full sort performance comparison tables </summary>
+		<summary> C# Full sort performance comparison for random numbers </summary>
 
  ``OS``: Win10 Pro, ``CPU``: AMD Ryzen 7 4800H, ``RAM``: 64.0 GB, ``--O3``
 
 
 ``int:``
 
-| case |    N         |    qsort (ms)  |   bb sort (ms )  |
-|------|--------------|----------------|------------------|
-|   1  |    1 000 001  |      8        |     3            |
-|   2  |   10 000 001  |     95        |    37            |
-|   3  |  100 000 001  |    930        |   379            |
+| case |    N         |    qsort (ms)  |      bb sort (ms )   |  builtin (ms )   |
+|------|--------------|----------------|----------------------|------------------|
+|   1  |    100 001   |        27      |         4            |    6             | 
+|   2  |  1 000 001   |       424      |        56            |    63            |
+|   3  |  1 048 576   |       339      |        58            |    63            |
 
 
 ``float:``
 
-| case |    N         |    qsort (ms)  |      bb sort (ms )   |
-|------|--------------|----------------|----------------------|
-|   1  |  1 001 001   |        646     |       446            |
-|   2  |  2 000 000   |      1 352     |     1 332            |
-|   3  |  2 000 000   |      1 266     |     1 034            |
-|   4  |  2 000 000   |      1 138     |     1 512            |
+| case |    N         |    qsort (ms)  |      bb sort (ms )   |  builtin (ms )   |
+|------|--------------|----------------|----------------------|------------------|
+|   1  |    100 001   |        39      |         6            |    7             | 
+|   2  |  1 000 001   |       453      |        70            |    78            |
+|   3  |  1 048 576   |        463     |        76            |    83            |
 
 </details>
 
 As shown above, c++ ``bb sort`` overcame quick sort run time performance up to 2 times.
 
-C# ``BB sort`` poolable implementation without counting duplicates has up to 3 times full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase. 
+C# ``BB sort`` poolable implementation without counting duplicates has up to 3 times full sort runtime performance than the quicksort\merge hybrid algorithm implementation taken from the Rosseta codebase and up to 10% against the builtin in .NET framework Array.Sort implementation.
 
 # Advantages
 
