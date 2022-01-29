@@ -175,7 +175,7 @@ Also, we can preserve the ```size equals 3``` case by adding ```mid``` field to 
 
 # Pragmatic version
 
-As practice shown, we also require to cover a case when log values are only slightly different. For that case we cannot continue to bb-sorting and fall back to builtin sorting routine. Nevertheless, we are still doing up to 10 percent better.
+As practice shown, we also require to cover a case when log values are only slightly different. For that case we cannot continue to bb-sorting. We can use bucket sorting or fall back to builtin sorting routine. Nevertheless, we are still doing up to 10 percent better.
 
 # Performance 
 
