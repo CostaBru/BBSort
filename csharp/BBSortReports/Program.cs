@@ -88,7 +88,7 @@ namespace BBSortReports
             System.Console.WriteLine(message);
         }
 
-        static void test_duplicate_reports<T>(Func<T, float> getLog)  where T : struct, IComparable,  IComparable<T>
+        static void test_duplicate_reports<T>(Func<T, float> getLog, Func<T, double> getFloat)  where T : struct, IComparable,  IComparable<T>
         {
             Print("test_duplicate_reports " + typeof(T).Name);
 
@@ -104,10 +104,10 @@ namespace BBSortReports
                 tests.Add(sample(rangeN<T>(-100000, 100000), 1024 * 1024 - 1));
             }
 
-            TestThis(getLog, tests);
+            TestThis(getLog, getFloat, tests);
         }
         
-        static void test_rand_reports<T>(Func<T, float> getLog)  where T : struct, IComparable,  IComparable<T>
+        static void test_rand_reports<T>(Func<T, float> getLog, Func<T, double> getFloat)  where T : struct, IComparable,  IComparable<T>
         {
             Print("test_rand_reports " + typeof(T).Name);
 
@@ -122,10 +122,10 @@ namespace BBSortReports
                 tests.Add(rangeRandomN<T>((1024 * 1024) - 1));
             }
 
-            TestThis(getLog, tests, false);
+            TestThis(getLog, getFloat, tests, false);
         }
 
-        private static void TestThis<T>(Func<T, float> getLog, HybridList<HybridList<T>> tests, bool shuffle = true) where T : struct, IComparable, IComparable<T>
+        private static void TestThis<T>(Func<T, float> getLog, Func<T, double> getFloat, HybridList<HybridList<T>> tests, bool shuffle = true) where T : struct, IComparable, IComparable<T>
         {
             var rand = new Random();
 
@@ -188,10 +188,8 @@ namespace BBSortReports
 
                         clock.Start();
 
-                        var bbSort = new BBsort.DictLess.MinMaxList.BBSort<T>(getLog);
+                        var bbSort = new BBsort.DictLess.MinMaxList.BBSort<T>(getLog, getFloat);
 
-                        BBsort.DictLess.MinMaxList.BBSort<T>.Cases = 0;
-                        BBsort.DictLess.MinMaxList.BBSort<T>.BuildInSortsCount = 0;
                         
                         bbSort.Sort(bbsortDictlessMMTest);
 
@@ -199,7 +197,7 @@ namespace BBSortReports
 
                         var ms = clock.ElapsedMilliseconds;
 
-                        Print($"[bb_sort_dictless mm] {ms}ms size: {bbsortDictlessMMTest.Length} Cases {BBsort.DictLess.MinMaxList.BBSort<T>.Cases}, Buildin sorts {BBsort.DictLess.MinMaxList.BBSort<T>.BuildInSortsCount}");
+                        Print($"[bb_sort_dictless mm] {ms}ms size: {bbsortDictlessMMTest.Length}");
                     }
 
                     bool good = qsortTest.Length == bbsortDictlessMMTest.Length;
@@ -234,7 +232,7 @@ namespace BBSortReports
             }
         }
 
-        static void test_unique_reports<T>(Func<T, float> getLog) where T : struct, IComparable,  IComparable<T>
+        static void test_unique_reports<T>(Func<T, float> getLog, Func<T, double> getFloat) where T : struct, IComparable,  IComparable<T>
         {
             Print("test_unique_reports " + typeof(T).Name);
 
@@ -272,7 +270,7 @@ namespace BBSortReports
 
                         clock.Start();
 
-                        var bbSort = new BBsort.DictLess.MinMaxList.BBSort<T>(getLog);
+                        var bbSort = new BBsort.DictLess.MinMaxList.BBSort<T>(getLog, getFloat);
 
                         bbSort.Sort(bbsortDictlessMMTest);
 
@@ -351,14 +349,14 @@ namespace BBSortReports
 
         public static void Main()
         {
-            test_rand_reports<float>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog);
-            test_rand_reports<int>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog);
+            test_rand_reports<float>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog, f => f);
+            test_rand_reports<int>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog, f => f);
             
-            test_duplicate_reports<float>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog);
-            test_unique_reports<float>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog);
+            test_duplicate_reports<float>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog, f => f);
+            test_unique_reports<float>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog, f => f);
             
-            test_duplicate_reports<int>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog);
-            test_unique_reports<int>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog);
+            test_duplicate_reports<int>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog, f => f);
+            test_unique_reports<int>(BBsort.DictLess.MinMaxList.BBSort<float>.getLog, f => f);
         }
     }
 }
